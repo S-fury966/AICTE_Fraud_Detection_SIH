@@ -1,0 +1,158 @@
+# Issuer verification settings (step 4).
+#
+# Bump `config_version` whenever a value changes: it is stamped onto every
+# result alongside the registry hash.
+config_version: issuer-verification-v1
+
+issuer:
+  # THE ONLY PLACE the request destination comes from.
+  #
+  # A URL read from a QR code, a document, or any other submitted artefact is
+  # evidence to be compared, never an address to contact. Honouring one would
+  # let whoever prepared the document choose which "issuer" vouches for it,
+  # which turns the whole check into theatre. Enforced in code and asserted by
+  # test_the_qr_host_is_never_contacted.
+  base_url: http://127.0.0.1:8088
+  # Query-parameter lookup, so certificate ids containing slashes need no
+  # encoding. Set lookup_style to "path" for issuers that expose the id as a
+  # percent-encoded path segment instead.
+  lookup_path: /v1/certificates
+  lookup_style: query
+  query_parameter: certificate_id
+  name: National Board of Technical Accreditation (Demo)
+
+request:
+  timeout_seconds: 5.0
+  # Attempts after the first one. Only transport errors, 429 and 5xx are
+  # retried: a 404 and a malformed body are answers, not accidents, and
+  # repeating the request cannot change either.
+  max_retries: 2
+  backoff_seconds: 0.5
+  # Doubling delay per attempt: 0.5, 1.0, 2.0 ...
+  backoff_multiplier: 2.0
+  # A server asking us to wait longer than this is treated as unavailable
+  # rather than slept through.
+  max_retry_after_seconds: 10.0
+  retry_on_status: [429, 500, 502, 503, 504]
+
+comparison:
+  # Fields compared between the submitted document and the issuer record.
+  # Anything not listed here is reported but never compared.
+  fields:
+    - institution_name
+    - issuing_body
+    - programmes
+    - grade
+    - valid_from
+    - valid_to
+
+  names:
+    # Institution and body names are compared after normalisation, then by
+    # similarity. OCR noise, punctuation and abbreviations are routine; a
+    # different college is not.
+    ignore_case: true
+    strip_punctuation: true
+    collapse_whitespace: true
+    # Below exact equality after normalisation, names must reach this ratio.
+    min_similarity: 0.90
+    # Expanded before comparison, longest key first. Keeps "Inst. of Engg."
+    # and "Institute of Engineering" from reading as different colleges.
+    abbreviations:
+      "inst": "institute"
+      "instt": "institute"
+      "engg": "engineering"
+      "engr": "engineering"
+      "tech": "technology"
+      "univ": "university"
+      "coll": "college"
+      "natl": "national"
+      "natt": "national"
+      "mgmt": "management"
+      "sci": "science"
+      "res": "research"
+      "dept": "department"
+      "bd": "board"
+      "cncl": "council"
+    # Removed before comparison: they carry no identifying information and
+    # appear inconsistently.
+    drop_words: ["the", "of", "and", "for", "demo"]
+
+  programmes:
+    # Compared as sets, not lists: order is not information.
+    #
+    # Each entry is also split on commas first. A certificate printing
+    # "Bachelor of Technology, Computer Science and Engineering" as one line
+    # and a registry holding it as one string must compare equal to an
+    # extraction that read it as two items — the comma is punctuation, not a
+    # list separator we can trust either way.
+    split_on_commas: true
+    ignore_case: true
+    # Each submitted programme must reach this similarity against some issuer
+    # programme for the sets to be called a match.
+    min_similarity: 0.90
+    # When true, a submitted set that is a subset of the issuer's programmes
+    # is a match: a certificate may print only the programme it was issued
+    # for while the issuer holds every accredited programme.
+    allow_subset: true
+
+  grade:
+    ignore_case: true
+    strip_punctuation: false
+    # Grades are identifiers: A+ and A++ are different outcomes, so this is an
+    # exact comparison after case folding, never a similarity.
+    exact: true
+
+# Which status each outcome maps to. Code decides which key applies; this
+# table decides what it is called. Only the six values from the fixed taxonomy
+# in CLAUDE.md are accepted, and an unknown value is rejected at load.
+status_mapping:
+  all_fields_match: verified
+  field_mismatch: mismatch_detected
+  issuer_status_revoked: mismatch_detected
+  issuer_status_suspended: mismatch_detected
+  expired_per_issuer: expired
+  issuer_pending: verification_pending
+  not_found: manual_review_required
+  no_certificate_id: manual_review_required
+  malformed_response: manual_review_required
+  source_unavailable: source_unavailable
+
+# When a document produces two lookups (the printed number and a differing QR
+# id), the document-level status is the most severe of them, by this order.
+# Later entries win. mismatch_detected ranks highest: it is the strongest
+# signal for prioritising a reviewer's time.
+status_severity:
+  - verified
+  - verification_pending
+  - expired
+  - source_unavailable
+  - manual_review_required
+  - mismatch_detected
+
+strength:
+  # Labels for a reviewer, not scores. Nothing here adds them up.
+  issuer_record_not_found: strong
+  issuer_field_mismatch: strong
+  issuer_status_not_active: strong
+  issuer_qr_id_other_institution: strong
+  issuer_expired: strong
+  issuer_no_certificate_id: weak
+  issuer_source_unavailable: weak
+  issuer_malformed_response: weak
+  issuer_qr_id_differs_from_document: weak
+  issuer_lookup_lower_trust: weak
+
+lookup:
+  # Trust labels for which id was used. The printed, snippet-validated number
+  # from step 2 is the primary source; a QR id is a fallback, because the QR
+  # is part of the same submitted artefact and is easier to replace than the
+  # printed text.
+  trust_document_number: normal
+  trust_qr_fallback: lower
+
+output:
+  # The issuer's raw response body is kept in the audit block, as the record
+  # of what the source actually said. Set false where the output should not
+  # carry it.
+  include_raw_response: true
+  max_raw_response_chars: 4000

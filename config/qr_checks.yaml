@@ -1,0 +1,103 @@
+# QR detection and cross-check settings.
+#
+# Every value here is a reviewer-tunable policy, not a fact about QR codes.
+# Bump `config_version` whenever one changes: it is stamped onto every result.
+config_version: qr-checks-v1
+
+images:
+  # Rendering resolution for PDF pages. A QR printed small on an A4 page needs
+  # the detail; below ~200 the finder patterns start to blur together.
+  render_dpi: 300
+  # Caps, so one oversized submission cannot stall a run.
+  max_pages: 50
+  max_embedded_images_per_page: 20
+  max_embedded_images_total: 100
+  # Embedded images smaller than this (in pixels, w*h) are skipped: logos and
+  # rules, never a scannable QR.
+  min_embedded_image_pixels: 2500
+  allowed_extensions: [".pdf", ".jpg", ".jpeg", ".png"]
+
+decoders:
+  # Tried in this order. The first to find anything in an image wins; the
+  # fallback runs only when the primary finds nothing.
+  order: [opencv, zxing]
+
+preprocessing:
+  # Only used when a plain decode of an image finds nothing. Each rung is
+  # tried with every decoder before moving on, and the rung that succeeded is
+  # recorded on the detection so a reviewer knows the read was not clean.
+  ladder:
+    - grayscale
+    - upscale_2x
+    - contrast_boost
+    - grayscale_upscale_2x
+    - rotate_90
+    - rotate_180
+    - rotate_270
+
+allowlist:
+  # Hosts a verification URL may legitimately point at. All demo domains use
+  # the reserved .test TLD, which cannot resolve to a real site.
+  - host: verify.nbta-demo.test
+    allow_subdomains: false
+  - host: nbta-demo.test
+    allow_subdomains: true
+
+deceptive:
+  # Hosts that hide their destination behind a redirect. A verification URL
+  # has no reason to use one.
+  shorteners:
+    - bit.ly
+    - tinyurl.com
+    - t.co
+    - goo.gl
+    - ow.ly
+    - is.gd
+    - buff.ly
+    - rebrand.ly
+    - cutt.ly
+    - short.test
+  # Labels in the host, counting the TLD. "verify.nbta-demo.test" is 3.
+  # Deep nesting is how a lookalike hides a real host in a subdomain.
+  max_host_labels: 4
+  # Ports a verification URL would normally use. Anything else is worth a look.
+  standard_ports: [80, 443]
+
+certificate_id:
+  # Certificate ids contain slashes (NBTA/DEMO/2024/00417), so the demo QR
+  # format percent-encodes the id into a single path segment:
+  #   https://verify.nbta-demo.test/c/NBTA%2FDEMO%2F2024%2F00417
+  # First pattern to match wins; the id comes from the `cert_id` group.
+  path_patterns:
+    - "^/c/(?P<cert_id>.+)$"
+    - "^/verify/(?P<cert_id>.+)$"
+  # Checked when no path pattern matches.
+  query_parameters: [cert, id]
+
+expectations:
+  # qr_not_found is only meaningful where a QR was expected in the first
+  # place. Matched case-insensitively against the step 2 issuing_body as a
+  # substring, since the extracted name may carry a "(Demo)" suffix.
+  issuers_expected_to_carry_qr:
+    - National Board of Technical Accreditation
+  # Used when there is no step 2 issuing_body to match against. False, so an
+  # unattributed document does not collect a qr_not_found finding that says
+  # nothing about the document itself.
+  default_expect_qr: false
+
+strength:
+  # "strong" and "weak" are labels for a reviewer, not scores. Nothing in this
+  # module adds them up; risk scoring is a later step and reads these.
+  qr_domain_not_allowlisted: strong
+  qr_deceptive_url_pattern: strong
+  qr_certificate_id_mismatch: strong
+  qr_pdf_link_mismatch: strong
+  qr_scheme_insecure: weak
+  qr_multiple_distinct: weak
+  qr_not_found: weak
+  qr_unreadable: weak
+
+output:
+  # Bounding boxes are in pixels of the image the QR was decoded from, which
+  # for a rendered page depends on render_dpi. Recorded for evidence links.
+  include_bounding_boxes: true

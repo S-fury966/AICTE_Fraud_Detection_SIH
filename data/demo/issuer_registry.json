@@ -1,0 +1,266 @@
+{
+  "registry_version": "issuer-registry-v1",
+  "seed": 20260124,
+  "note": "Synthetic demo data. Every institution, accrediting body and domain is fictional; all domains use the reserved .test TLD. This registry accredits nothing.",
+  "issuer_name": "National Board of Technical Accreditation (Demo)",
+  "issuer_domain": "verify.nbta-demo.test",
+  "pending_certificate_ids": [
+    "NBTA/DEMO/2025/00501"
+  ],
+  "record_count": 19,
+  "records": [
+    {
+      "certificate_id": "NBTA/DEMO/2024/00417",
+      "institution_name": "Shantiniketan Institute of Technology",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Computer Science and Engineering"
+      ],
+      "grade": "A+",
+      "valid_from": "2024-07-01",
+      "valid_to": "2027-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00418",
+      "institution_name": "Gomati Valley College of Engineering",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Computer Science and Engineering"
+      ],
+      "grade": "A",
+      "valid_from": "2024-07-01",
+      "valid_to": "2027-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2019/00031",
+      "institution_name": "Harita Institute of Science and Technology",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Civil Engineering"
+      ],
+      "grade": "B++",
+      "valid_from": "2016-07-01",
+      "valid_to": "2019-06-30",
+      "issuer_status": "active",
+      "record_updated": "2019-07-02"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2023/00204",
+      "institution_name": "Nilgiri College of Engineering and Technology",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Mechanical Engineering"
+      ],
+      "grade": "B+",
+      "valid_from": "2023-07-01",
+      "valid_to": "2028-06-30",
+      "issuer_status": "revoked",
+      "record_updated": "2025-03-18"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2023/00205",
+      "institution_name": "Nilgiri College of Engineering and Technology",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Civil Engineering"
+      ],
+      "grade": "B++",
+      "valid_from": "2023-07-01",
+      "valid_to": "2028-06-30",
+      "issuer_status": "suspended",
+      "record_updated": "2026-02-02"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2025/00501",
+      "institution_name": "Saraswati Institute of Technology and Management",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Information Technology"
+      ],
+      "grade": "A",
+      "valid_from": "2025-07-01",
+      "valid_to": "2030-06-30",
+      "issuer_status": "pending",
+      "record_updated": "2026-09-30"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00422",
+      "institution_name": "Konkan Coast Inst. of Engg.",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Electronics and Communication Engineering"
+      ],
+      "grade": "A",
+      "valid_from": "2024-07-01",
+      "valid_to": "2029-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00604",
+      "institution_name": "Vindhya Institute of Technology",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Civil Engineering"
+      ],
+      "grade": "A+",
+      "valid_from": "2024-07-01",
+      "valid_to": "2029-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00608",
+      "institution_name": "Vindhya Institute of Technology",
+      "issuing_body": "Regional Council for Technical Education (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Computer Science and Engineering"
+      ],
+      "grade": "A+",
+      "valid_from": "2024-07-01",
+      "valid_to": "2029-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00617",
+      "institution_name": "Chenab Valley College of Technology",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Master of Technology, Structural Engineering",
+        "Bachelor of Technology, Computer Science and Engineering"
+      ],
+      "grade": "B+",
+      "valid_from": "2024-07-01",
+      "valid_to": "2029-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00620",
+      "institution_name": "Chenab Valley College of Technology",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Civil Engineering"
+      ],
+      "grade": "A+",
+      "valid_from": "2022-07-01",
+      "valid_to": "2027-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00621",
+      "institution_name": "Deccan Plateau Institute of Engineering",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Mechanical Engineering"
+      ],
+      "grade": "A",
+      "valid_from": "2023-07-01",
+      "valid_to": "2028-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00622",
+      "institution_name": "Malabar Institute of Technology",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Electronics and Communication Engineering",
+        "Bachelor of Technology, Information Technology"
+      ],
+      "grade": "A++",
+      "valid_from": "2024-07-01",
+      "valid_to": "2029-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00629",
+      "institution_name": "Malabar Institute of Technology",
+      "issuing_body": "Regional Council for Technical Education (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Electronics and Communication Engineering",
+        "Bachelor of Technology, Mechanical Engineering"
+      ],
+      "grade": "A++",
+      "valid_from": "2022-07-01",
+      "valid_to": "2027-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00630",
+      "institution_name": "Malabar Institute of Technology",
+      "issuing_body": "Regional Council for Technical Education (Demo)",
+      "programmes": [
+        "Master of Technology, Structural Engineering",
+        "Bachelor of Technology, Computer Science and Engineering"
+      ],
+      "grade": "A",
+      "valid_from": "2024-07-01",
+      "valid_to": "2029-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00634",
+      "institution_name": "Brahmaputra College of Engineering",
+      "issuing_body": "Regional Council for Technical Education (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Mechanical Engineering"
+      ],
+      "grade": "A+",
+      "valid_from": "2023-07-01",
+      "valid_to": "2028-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00635",
+      "institution_name": "Aravalli Institute of Technology and Research",
+      "issuing_body": "Regional Council for Technical Education (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Electronics and Communication Engineering"
+      ],
+      "grade": "A+",
+      "valid_from": "2024-07-01",
+      "valid_to": "2029-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00638",
+      "institution_name": "Aravalli Institute of Technology and Research",
+      "issuing_body": "National Board of Technical Accreditation (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Civil Engineering",
+        "Bachelor of Technology, Mechanical Engineering"
+      ],
+      "grade": "B+",
+      "valid_from": "2022-07-01",
+      "valid_to": "2027-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    },
+    {
+      "certificate_id": "NBTA/DEMO/2024/00642",
+      "institution_name": "Aravalli Institute of Technology and Research",
+      "issuing_body": "Regional Council for Technical Education (Demo)",
+      "programmes": [
+        "Bachelor of Technology, Information Technology",
+        "Master of Technology, Structural Engineering"
+      ],
+      "grade": "B+",
+      "valid_from": "2024-07-01",
+      "valid_to": "2029-06-30",
+      "issuer_status": "active",
+      "record_updated": "2026-01-10"
+    }
+  ]
+}

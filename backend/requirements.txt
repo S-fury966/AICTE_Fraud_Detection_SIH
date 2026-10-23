@@ -1,0 +1,44 @@
+# Step 1: document text extraction.
+#
+# Python 3.10 is the target: rapidocr-onnxruntime 1.4.x (the current line, with
+# bundled ONNX models) declares Requires-Python <3.13, which rules out this
+# machine's default 3.14. onnxruntime itself has a cp314 wheel, so the wrapper
+# is the only constraint. 3.10 is also well supported by everything the later
+# detectors will need (opencv, imagehash, FastAPI).
+pymupdf==1.26.6
+pillow==11.3.0
+pyyaml==6.0.3
+numpy==2.2.6
+rapidocr-onnxruntime==1.4.4
+pytest==8.4.2
+
+# Step 2: certificate field extraction
+#
+# httpx2 is the httpx 2.x line, published under a new distribution name by the
+# pydantic org (homepage github.com/pydantic/httpx2, same author as httpx). The
+# old `httpx` distribution is frozen at 0.28.1. It is NOT a typo or a
+# typosquat, and it imports as `httpx2` — which is what our providers and the
+# issuer client import. Starlette 1.7's TestClient supports it natively, so the
+# in-process tests need no second HTTP library.
+httpx2==2.14.0
+
+# Step 3: QR detection and cross-check
+# Versions below are what actually resolved on Python 3.10 / Windows here.
+#
+# opencv-python, NOT opencv-python-headless, despite headless being the better
+# fit for a server: rapidocr-onnxruntime (step 1) requires opencv-python by
+# name, and the two distributions install the same `cv2` package. Having both
+# means whichever was installed last owns cv2, and uninstalling that one
+# deletes cv2 while the other still claims to provide it. One flavour only.
+opencv-python==5.0.0.93
+# Fallback decoder. Reads rotated, low-contrast and blurred codes that the
+# OpenCV detector gives up on. Not pyzbar: that needs a native DLL on PATH.
+zxing-cpp==3.1.1
+
+# Test-only: generates the synthetic QR fixtures. Not imported by app code.
+segno==1.6.6
+
+# Step 4: mock issuer service and verification client
+# Resolved on Python 3.10 / Windows here.
+fastapi==0.162.0
+uvicorn==0.54.0

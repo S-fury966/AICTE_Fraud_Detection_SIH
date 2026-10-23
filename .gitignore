@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+backend/tests/fixtures/
+.pytest_cache/
+.env

@@ -1,0 +1,42 @@
+# Document text extraction settings.
+# Every threshold used by backend/app/extraction lives here. Nothing is hardcoded.
+# Bump `config_version` whenever a value changes: it is stamped onto every result
+# so an evaluation can always be traced back to the settings that produced it.
+config_version: extraction-v1
+
+pdf:
+  # DPI used when a page has to be rendered to an image for OCR.
+  render_dpi: 300
+  # Hard cap so a malicious or broken file cannot stall the pipeline.
+  max_pages: 50
+
+  # A page's embedded text layer is trusted only if it clears ALL of these.
+  # Otherwise the page is rendered and sent to OCR.
+  text_layer:
+    min_chars: 80
+    min_words: 15
+    # Share of characters that are letters, digits, whitespace or common
+    # punctuation. Low values indicate a garbage or deliberately broken
+    # text layer, which should fall back to OCR.
+    min_readable_ratio: 0.70
+
+ocr:
+  # Name registered in backend/app/extraction/ocr/registry.py
+  engine: rapidocr
+  # Pages whose average confidence falls below this are reported as
+  # low_confidence so a reviewer knows the text may be unreliable.
+  # This is a reporting threshold only; it never discards text.
+  min_avg_confidence: 0.60
+  engines:
+    rapidocr:
+      # Per-line score below which a detected line is dropped as noise.
+      text_score: 0.50
+
+images:
+  allowed_extensions: [".jpg", ".jpeg", ".png"]
+
+output:
+  # Reserved for the later text-layer-vs-visible-content tamper check.
+  # When false, `ocr_text` stays null on text_layer pages. Step 1 does not
+  # implement the comparison itself.
+  ocr_text_layer_pages_too: false

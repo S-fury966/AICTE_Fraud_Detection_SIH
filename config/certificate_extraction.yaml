@@ -1,0 +1,103 @@
+# Certificate field extraction settings.
+#
+# The LLM reads and reports; the checks below are what the code then enforces.
+# Bump `config_version` whenever a value changes: it is stamped onto every
+# result alongside the prompt version.
+config_version: certificate-extraction-v3
+
+prompt:
+  # Resolves to backend/app/llm/prompts/<name>.<version>.md
+  name: certificate_extraction
+  version: v1
+
+llm:
+  # Name registered in backend/app/llm/registry.py
+  provider: groq
+  # Attempts after the first one, when the response fails schema validation.
+  max_retries: 1
+  # Sampling temperature, passed to providers that accept it. 0 is as close to
+  # repeatable as a hosted model gets; the real guarantee of consistency is
+  # the deterministic validation applied to whatever comes back.
+  temperature: 0
+  # Each block below is the same OpenAI-compatible client with a different
+  # endpoint, model and key. Adding another free tier is a block here, not
+  # code. Shared keys:
+  #   json_mode  - ask the server to guarantee the body parses as JSON. Our
+  #                schema validation still runs: this constrains syntax, not
+  #                contents.
+  #   rate_limit_* - free tiers rate limit hard, so a 429 is routine rather
+  #                than a fault. The provider waits and retries on its own,
+  #                separate from the schema retries above, honouring the
+  #                server's Retry-After when it sends one.
+  providers:
+    groq:
+      base_url: https://api.groq.com/openai/v1
+      # Groq serves open-weight models. gpt-oss-120b is the strongest one on
+      # the key's model list and answers field extraction reliably; it is a
+      # reasoning model, so it spends more output tokens than its size
+      # suggests. qwen/qwen3.8-27b is the cheaper, terser alternative.
+      model: openai/gpt-oss-120b
+      max_tokens: 4096
+      api_key_env: GROQ_API_KEY
+      json_mode: true
+      timeout_seconds: 60
+      rate_limit_retries: 3
+      rate_limit_backoff_seconds: 2.0
+    mistral:
+      base_url: https://api.mistral.ai/v1
+      model: mistral-small-latest
+      max_tokens: 4096
+      api_key_env: MISTRAL_API_KEY
+      json_mode: true
+      timeout_seconds: 60
+      rate_limit_retries: 3
+      rate_limit_backoff_seconds: 2.0
+
+snippet_validation:
+  # The hallucination guard: a value survives only if its source_snippet is
+  # actually present in the page text.
+  collapse_whitespace: true
+  ignore_case: true
+  # Below exact containment, the closest window in the page text must reach
+  # this similarity ratio. 1.0 would demand an exact match after
+  # normalisation; a little slack absorbs OCR noise and stray punctuation.
+  min_similarity: 0.92
+  # Minimum snippet length worth checking. A very short snippet matches
+  # almost anything and proves nothing.
+  min_snippet_chars: 8
+  # If the snippet is absent from the page the model claimed but present on
+  # another page, keep the value and correct the page number instead of
+  # discarding it.
+  allow_page_correction: true
+
+  # Fields where the VALUE itself must appear verbatim in the page text, not
+  # merely inside a snippet that fuzzy-matches.
+  #
+  # Fuzzy snippet matching exists to absorb OCR noise in prose, but on an
+  # identifier it is dangerous: a certificate number altered by one digit
+  # still scores ~0.97 against the original line and would pass. These are
+  # the fields where a single character changes the meaning, so they are
+  # checked by exact containment after normalisation. Prose fields such as
+  # institution_name stay fuzzy, because OCR routinely mangles them.
+  exact_value_fields:
+    - certificate_number
+    - accreditation_status_or_grade
+    - issue_date
+    - valid_from
+    - valid_to
+
+dates:
+  # Indian convention: 03/04/2025 is 3 April, not 4 March.
+  day_first: true
+  min_year: 1900
+  max_year: 2100
+
+consistency:
+  # Reference date for the expiry report. null means "today", in UTC.
+  # Pin it to a fixed date for reproducible demos and evaluation runs.
+  as_of: null
+
+output:
+  # Raw model responses are kept in the audit block for review. Set false to
+  # drop them if the output is going somewhere that should not hold them.
+  include_raw_responses: true
