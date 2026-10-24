@@ -14,12 +14,17 @@ pytest==8.4.2
 
 # Step 2: certificate field extraction
 #
-# httpx2 is the httpx 2.x line, published under a new distribution name by the
-# pydantic org (homepage github.com/pydantic/httpx2, same author as httpx). The
-# old `httpx` distribution is frozen at 0.28.1. It is NOT a typo or a
-# typosquat, and it imports as `httpx2` — which is what our providers and the
-# issuer client import. Starlette 1.7's TestClient supports it natively, so the
-# in-process tests need no second HTTP library.
+# httpx2 presents itself as the httpx 2.x line, published under a new
+# distribution name by the pydantic org (homepage github.com/pydantic/httpx2,
+# same author as httpx). The old `httpx` distribution is frozen at 0.28.1. It
+# imports as `httpx2` — which is what our providers and the issuer client
+# import. Starlette 1.7's TestClient supports it natively, so the in-process
+# tests need no second HTTP library.
+#
+# BELIEVED GENUINE — verify on PyPI and GitHub before release. Everything above
+# comes from the package's own metadata, which is self-declared: a typosquat can
+# claim any homepage, author and description it likes. Confirming provenance
+# means checking the PyPI project page against the pydantic org's GitHub by hand.
 httpx2==2.14.0
 
 # Step 3: QR detection and cross-check
@@ -42,3 +47,35 @@ segno==1.6.6
 # Resolved on Python 3.10 / Windows here.
 fastapi==0.162.0
 uvicorn==0.54.0
+
+# Step 5: persistence, audit trail and the pipeline entry point
+# Resolved on Python 3.10 / Windows here. 2.x for the typed ORM style
+# (DeclarativeBase, Mapped, mapped_column) the models use.
+sqlalchemy==2.0.55
+
+# Step 6: PDF signature integrity and duplicate detection
+# Resolved on Python 3.10 / Windows here.
+#
+# pyHanko locates signature fields, reads /ByteRange and derives how much of
+# the file a signature covers. We do NOT use its validation API: the scope is
+# integrity only, with no certificate-chain or trust-store checking, which is
+# also what keeps this module off the network. The digest comparison itself is
+# ours (hashlib + asn1crypto) because pyHanko's `external_digests` is a cache of
+# *recomputed* digests, not the signed value — comparing the two would always
+# agree. See app/signatures/README.md.
+#
+# It is a heavy install: 20-odd transitive packages including aiohttp, lxml,
+# oscrypto and cryptography. Accepted because re-deriving PDF revision
+# boundaries by hand is where subtle bugs live, and because a reference
+# implementation signing the fixtures is what stops our checker from testing
+# only its own assumptions.
+pyhanko==0.38.0
+# Pulled in by pyhanko, and imported directly for the CMS messageDigest.
+asn1crypto==1.5.1
+# Pulled in by pyhanko. Used directly only in tests, to generate a throwaway
+# self-signed certificate in memory.
+cryptography==50.0.2
+
+# Perceptual hashing for duplicate detection, and for the photo detector later.
+# Brings scipy and PyWavelets (phash needs a DCT, whash a wavelet transform).
+imagehash==4.3.2

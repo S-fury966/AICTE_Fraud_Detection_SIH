@@ -237,3 +237,51 @@ def _collect_links(page: Any, result: ImageHarvest) -> None:
 
     result.link_hosts = list(dict.fromkeys(result.link_hosts))
     result.link_uris = list(dict.fromkeys(result.link_uris))
+
+
+def render_page_image(path: Path, page_number: int, dpi: int) -> Any:
+    """Render one page as a PIL image, reusing this module's PDF rendering.
+
+    Step 6's duplicate detection needs page 1 as an image, and rendering it a
+    second way would mean two code paths that could drift: a page hashed under
+    one renderer and compared against a corpus hashed under another produces
+    distances that mean nothing. So both go through `_render_page`.
+
+    An image file is returned as itself; `page_number` is then ignored.
+    """
+    from PIL import Image, UnidentifiedImageError
+
+    if path.suffix.lower() != ".pdf":
+        try:
+            with Image.open(path) as handle:
+                return handle.convert("RGB")
+        except UnidentifiedImageError as exc:
+            raise ImageLoadError(f"not a readable image: {exc}") from exc
+        except OSError as exc:
+            raise ImageLoadError(f"could not read image: {exc}") from exc
+
+    import fitz
+
+    try:
+        document = fitz.open(path)
+    except Exception as exc:
+        raise ImageLoadError(f"could not open PDF: {exc}") from exc
+
+    with document:
+        if document.needs_pass:
+            raise PasswordProtectedError("PDF is password protected")
+        if page_number < 1 or page_number > document.page_count:
+            raise ImageLoadError(
+                f"page {page_number} is outside the document "
+                f"(1-{document.page_count})"
+            )
+        array = _render_page(document.load_page(page_number - 1), dpi)
+
+    if array is None:
+        raise ImageLoadError(f"page {page_number} could not be rendered")
+
+    # No explicit `mode`: Pillow deprecated the argument, and it infers both
+    # of these correctly from the array's shape and dtype anyway.
+    if array.ndim == 2:
+        return Image.fromarray(array).convert("RGB")
+    return Image.fromarray(array)

@@ -1,0 +1,85 @@
+# PDF signature integrity (step 6, part A).
+#
+# SCOPE: integrity only. This module answers one question — "was this file
+# modified after it was signed?" — and deliberately does NOT answer "is the
+# signer who they claim to be?". There is no certificate-chain validation and
+# no trust store, so every signer name and signing time it reports is
+# UNVERIFIED and is labelled as such in the output.
+#
+# Bump `config_version` whenever a value changes: it is stamped onto every
+# check run alongside the other detectors' config versions.
+config_version: signature-checks-v1
+
+detection:
+  # Signature structures are located through pyHanko's PDF reader. When the
+  # reader cannot enumerate them (a malformed CMS blob aborts enumeration for
+  # the whole file), we fall back to counting raw /ByteRange occurrences so an
+  # unparseable signature is reported rather than silently read as "unsigned".
+  raw_byterange_marker: "/ByteRange"
+  # Guard against a pathological file claiming thousands of signatures.
+  max_signatures: 20
+
+integrity:
+  # The digest is recomputed with hashlib over the gaps named by /ByteRange and
+  # compared against the `messageDigest` attribute inside the CMS SignedData.
+  #
+  # Doing the comparison ourselves is deliberate. pyHanko's `external_digests`
+  # is a *cache of recomputed* digests, not the signed value, so comparing the
+  # two would always agree and the check would be vacuous. A test asserts that
+  # our recomputation agrees with pyHanko's `compute_digest()`.
+  digest_algorithms_allowed:
+    - sha256
+    - sha384
+    - sha512
+    # Still parsed and reported, but a reviewer should be told the algorithm is
+    # obsolete rather than have the signature silently accepted.
+    - sha1
+  weak_digest_algorithms:
+    - sha1
+    - md5
+
+expectations:
+  # Default OFF, so an unsigned document stays quiet. Most EoA attachments are
+  # scans and were never signed; flagging every one would bury the real
+  # findings. Switch on only for a document type or issuer that genuinely
+  # always signs.
+  signature_expected_by_default: false
+  signature_expected_document_types: []
+  # Issuing bodies (as extracted in step 2) known to always sign. Compared
+  # case-insensitively after whitespace collapse.
+  signature_expected_issuers: []
+
+findings:
+  types:
+    digest_mismatch: signature_digest_mismatch
+    does_not_cover_document: signature_does_not_cover_document
+    bytes_after_signed_revision: bytes_after_signed_revision
+    unparseable: signature_unparseable
+    unsigned_where_expected: unsigned_where_signature_expected
+    weak_digest_algorithm: signature_weak_digest_algorithm
+
+strength:
+  # Labels for a reviewer, not scores. Nothing in this module adds them up;
+  # risk scoring is a later step and reads these.
+  signature_digest_mismatch: strong
+  # "medium" enters the vocabulary here: an append after signing is genuinely
+  # ambiguous — some legitimate tools add long-term validation data — so
+  # neither "strong" nor "weak" was honest.
+  signature_does_not_cover_document: strong
+  bytes_after_signed_revision: medium
+  # Not an accusation: a signature we cannot read is a signature we cannot
+  # judge, so it routes to a human.
+  signature_unparseable: weak
+  unsigned_where_signature_expected: weak
+  signature_weak_digest_algorithm: weak
+
+output:
+  # The signer name and claimed signing time, both UNVERIFIED. Recorded because
+  # a reviewer will want them; labelled because they prove nothing.
+  include_signer_name: true
+  include_claimed_signing_time: true
+  # Hex digests are included so a reviewer sees the actual values compared.
+  include_digests: true
+  # Truncate hex digests in the output to this many characters. Full length is
+  # 64 for sha256; the whole value is kept.
+  digest_hex_length: 64

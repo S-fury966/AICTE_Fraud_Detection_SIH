@@ -1,0 +1,127 @@
+# Cross-application duplicate detection (step 6, part B).
+#
+# Bump `config_version` whenever a value changes: it is stamped onto every
+# check run alongside the other detectors' config versions.
+config_version: duplicate-checks-v1
+
+checks:
+  # Each can be turned off independently. All four are cheap; the switches
+  # exist so an evaluation can measure one check's contribution in isolation.
+  exact_file_hash: true
+  near_duplicate_image: true
+  certificate_number_reuse: true
+  qr_payload_reuse: true
+
+perceptual_hash:
+  # Which page to hash. Page 1 carries the letterhead, the institution name
+  # and the certificate number, which is where the discriminating detail is.
+  page: 1
+  # Rendering DPI. Higher costs time and buys nothing: every hash kind
+  # downsamples to hash_size x hash_size before it does anything else.
+  render_dpi: 150
+  # 16 means a 256-bit hash. NOT 8.
+  #
+  # Measured: at 64 bits (hash_size 8) a perceptual hash cannot discriminate
+  # document pages at all. An *unrelated* document sat 8 bits away from a
+  # certificate, and a certificate from a different institution sat 0 bits
+  # away - indistinguishable from the identical file. A page of sparse black
+  # text on white is almost all white, and the hash is dominated by that.
+  hash_size: 16
+  # Every kind listed is computed and stored, so the corpus never has to be
+  # re-rendered to try another one.
+  kinds:
+    - dhash
+    - phash
+  # The kind compared against the corpus.
+  #
+  # dhash, not phash - the opposite of the usual advice, and measured on this
+  # material: phash keeps low-frequency DCT coefficients, and a sparse text
+  # page has almost no low-frequency structure, so small changes dominate it. A
+  # 1-degree rotation moved phash 22 bits and dhash 6; a 3-degree rotation
+  # moved phash 58 bits, further than an unrelated document.
+  compare_kind: dhash
+  # Hamming distance at or below which two pages are reported as possible
+  # near-duplicates. Measured on synthetic certificate pages (dhash, 256 bits):
+  #
+  #   same document, JPEG q70 / q40          1 /  3
+  #   same document, downscaled x2 / x4      3 /  5
+  #   same document, rotated 0.5 / 1 / 2 deg 4 /  6 /  8
+  #   same document, rotated 3 deg          12
+  #   same document, rotated 5 deg          23   <- missed at this threshold
+  #   same certificate, one digit edited     1
+  #   SAME TEMPLATE, other institution    2 - 6   <- inside the same-doc band
+  #   unrelated documents                22 - 26
+  #
+  # 12 catches every re-encode, rescale and rotation up to 3 degrees while
+  # excluding every unrelated document (closest: 22). A 5-degree rotated scan
+  # is missed; that is accepted, because a rotated *photograph* is the photo
+  # detector's problem and a resubmitted file is caught by the exact hash and
+  # the certificate number regardless.
+  near_duplicate_max_distance: 12
+
+  # The finding that this threshold cannot make: a one-digit edit sits 1 bit
+  # away and a same-template sibling sits 2-6 bits away, both inside the band a
+  # genuine re-save occupies. No threshold separates them. That is why a
+  # near-duplicate image is never a strong finding here - see `strength` below.
+
+context:
+  # A document is never a duplicate of its own earlier runs. Re-running the
+  # same document must not flag it against itself.
+  exclude_same_document: true
+  # Relationships are stored once per unordered pair, so processing A then B
+  # and B then A produce the same set.
+  normalise_pair_order: true
+
+findings:
+  types:
+    exact_file: duplicate_file_exact
+    near_duplicate_image: near_duplicate_page_image
+    certificate_number: certificate_number_reuse
+    qr_payload: qr_payload_reuse
+
+strength:
+  # Severity depends on context, not on the check. The same observation means
+  # different things depending on who else holds the thing observed.
+  #
+  # "medium" is in this vocabulary deliberately: for the cases below neither
+  # "strong" nor "weak" was honest.
+  duplicate_file_exact:
+    # The identical file submitted by someone else. Strong.
+    other_institution: strong
+    # An institution resubmitting its own file is normal - a correction, a
+    # re-upload, a second application cycle. Informational.
+    same_institution: weak
+  certificate_number_reuse:
+    other_institution: strong
+    same_institution: weak
+  qr_payload_reuse:
+    other_institution: strong
+    same_institution: weak
+  near_duplicate_page_image:
+    # Never strong, whatever the context. Legitimate certificates from one
+    # issuer share a template, and the measurements above show a template
+    # sibling is indistinguishable from a re-saved copy at any threshold.
+    #
+    # The numbers differ, so this is most likely two certificates from the same
+    # issuer. Reported so a reviewer can look, nothing more.
+    different_number: weak
+    # Same number, different institution: the image similarity adds little
+    # here, because `certificate_number_reuse` has already fired strongly on
+    # the number itself. Medium so it reads as corroboration, not a second
+    # independent accusation.
+    same_number_other_institution: medium
+    # Same number, same institution: a resubmission of the same certificate.
+    same_number_same_institution: weak
+    # One side or the other had no validated certificate number, so the
+    # comparison that would give this meaning could not be made.
+    number_unknown: weak
+
+output:
+  # Both certificate numbers and the measured distance go in the evidence of
+  # every near-duplicate finding, so a reviewer sees what the number was rather
+  # than only that the pages looked alike.
+  include_distance: true
+  include_compared_fields: true
+  # Cap on relationships reported per check, so one much-resubmitted file
+  # cannot produce a run with thousands of findings.
+  max_matches_per_check: 25

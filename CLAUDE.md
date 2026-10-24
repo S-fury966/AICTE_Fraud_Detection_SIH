@@ -102,11 +102,21 @@ detectors. Do not add an automated decision path.
 - **One application at a time.** No batch pipeline, no job queue. (Confirmed 2026-10-23.)
 - **LLM provider: Groq**, or any other OpenAI-compatible endpoint, selected in config. One
   client file serves all of them; see "LLM provider" above.
+- **Persistence: SQLAlchemy 2.x over SQLite**, with Postgres a drop-in — the models use only
+  column types both backends render natively, asserted by a test. Schema creation is
+  `create_all` plus a `schema_version` row; **no Alembic yet**, because the prototype's
+  schema still moves in whole steps and a migration history nobody trusts is worse than
+  none.
+- **Review workflow in config.** The finding lifecycle (`open`, `confirmed`, `dismissed`,
+  `needs_more_info`) and the action-to-status map live in `config/persistence.yaml`, so what
+  "dismiss" means is an organisation's decision. Repository functions only; no UI.
 
 ### Still open (ask when the relevant step is reached)
 - Faculty identity matching: synthetic unique ID vs. fuzzy name+qualification matching.
-- Admin UI for live editing of weights/allowlists vs. config files only. Now covers four
-  config files: extraction, certificate extraction, QR domains, issuer verification.
+- Admin UI for live editing of weights/allowlists vs. config files only. Now covers five
+  config files: extraction, certificate extraction, QR domains, issuer verification,
+  persistence. Step 5 built the review-action repository functions but no UI, so the
+  question is still open for both review and configuration.
 
 ## Runtime (set in step 1)
 - **Python 3.10** in `.venv`, created from the 3.10 interpreter on the dev machine.
@@ -132,12 +142,26 @@ detectors. Do not add an automated decision path.
 - **Step 3 — QR detection and cross-check: done.** `backend/app/qr`, `config/qr_checks.yaml`.
   No LLM anywhere in this module. Eight finding types, each carrying evidence and a
   configured `strong`/`weak` label. Details in `backend/app/qr/README.md`.
+- **Step 5 — persistence, audit trail and pipeline entry point: done.**
+  `backend/app/db` (models, engine, hash-chained audit log, repository),
+  `backend/app/pipeline` (the one entry point), with CLIs in `backend/app/reports` and
+  `backend/app/audit`. `config/persistence.yaml`. SQLAlchemy 2.0.55, SQLite for the
+  prototype. Details in `backend/app/db/README.md`.
 - **Step 4 — mock issuer and verification client: done.** `backend/app/mock_issuer` (the
   synthetic registry and a FastAPI stand-in) and `backend/app/issuer` (the client,
   comparison and status mapping). `config/issuer_verification.yaml`,
   `data/demo/issuer_registry.json`. No LLM. First consumer of the status taxonomy, now
   defined once in `backend/app/core/verification.py`. Details in
   `backend/app/issuer/README.md`.
+
+- **Step 6 — PDF signature integrity and duplicate detection: done.**
+  `backend/app/signatures` (integrity only, signer never verified),
+  `backend/app/duplicates` (cross-application), and `backend/app/similarity`
+  (perceptual hashing, shared so the photo detector can reuse it).
+  `config/signature_checks.yaml`, `config/duplicate_checks.yaml`. No LLM in
+  either. Three new tables: `signature_details`, `perceptual_hashes`,
+  `cross_references`. The pipeline is now six stages. Details in
+  `backend/app/signatures/README.md` and `backend/app/duplicates/README.md`.
 
 ### The snippet-validation rule (step 2's core guard)
 Every non-null value the model returns must be traceable to the source text, or code
@@ -283,13 +307,245 @@ exactly: `A+` and `A++` are different outcomes.
 own data cannot be reasoned about, and the eval set needs the same registry every run or
 detection rates are not comparable. Fault injection is inert unless explicitly set.
 
-**Dependency note on `httpx2`.** It is the httpx 2.x line, published under a new
-distribution name by the pydantic org (same author as httpx); the old `httpx` distribution
-is frozen at 0.28.1. Not a typo and not a typosquat, and it imports as `httpx2`, which is
-what our code imports. Starlette 1.7's `TestClient` supports it natively. Resolved on
+**Dependency note on `httpx2`.** It presents itself as the httpx 2.x line, published under
+a new distribution name by the pydantic org (same author as httpx); the old `httpx`
+distribution is frozen at 0.28.1. It imports as `httpx2`, which is what our code imports.
+**Believed genuine — verify on PyPI and GitHub before release.** What we have checked is
+only the package metadata, and metadata is self-declared: a typosquat can claim any
+homepage, author and description it likes, so none of it is evidence of provenance.
+Confirming this means checking the PyPI project page and the pydantic org's own GitHub
+against each other by hand. Starlette 1.7's `TestClient` supports it natively. Resolved on
 Python 3.10 / Windows: `fastapi 0.162.0`, `uvicorn 0.54.0` (with `starlette 1.7.0`,
 `pydantic 2.14.1`).
 
 Step 4 tests are all fast: they drive the FastAPI app in-process via `TestClient`, so no
 port is opened and no sleep is actually performed — the retry schedule is asserted exactly
 rather than timed.
+
+### Step 5 decisions
+
+**Runs are never overwritten.** A re-run of a document creates a **new** `check_runs` row
+with its own children; nothing mutates an existing run, and the repository exposes no update
+or delete for one. History is the point: a reviewer must be able to see that a document was
+clean under last month's rules and is flagged under this month's, which is impossible if a
+run is edited in place. Each run therefore stores the config versions *and* hashes it was
+judged under, plus the prompt version, provider, model and registry hash.
+
+**Tables** (`backend/app/db/models.py`):
+
+| Table | Holds |
+|---|---|
+| `institutions` | name, optional synthetic registry reference |
+| `applications` | institution, category |
+| `documents` | type, original filename, `file_sha256`, stored path, size, uploader + role |
+| `check_runs` | one pipeline pass: timings, status, actor, the four detector config versions + `config_hashes`, prompt version, model, provider, registry hash |
+| `stage_results` | per stage: `ok` / `degraded` / `skipped` / `failed`, the stage's own status, reason, duration |
+| `page_extractions` | per page: method, text, confidence, text-layer presence, OCR text, decision reason |
+| `extracted_fields` | per field: value, snippet, page, confidence, `validated`, ISO value, rejection reason, model value |
+| `raw_llm_responses` | unvalidated model output, separate table, behind `runs.store_raw_llm_responses` |
+| `qr_detections` | raw text, page, bounding box, decoder, source, payload kind, parsed host, certificate id |
+| `verification_lookups` | id used + origin + trust, outcome, status, comparisons (JSON), issuer record, raw response, HTTP status, latency, attempts |
+| `findings` | **one table for every detector**: detector, type, strength, reason, evidence, `review_status` |
+| `review_actions` | a human acting on a finding: actor, role, action, note |
+| `audit_log` | append-only hash chain (see below) |
+| `schema_version` | what created this database, standing in for a migration tool |
+
+Findings are one table rather than one per detector because a reviewer works a single queue,
+and a table per detector would make the system's most common query a UNION. `stage_results`
+exists so a skipped stage is *recorded*: a missing row would be indistinguishable from a
+stage that ran and found nothing, which are opposite facts.
+
+**The audit chain.** Every `audit_log` entry hashes its own content plus the previous
+entry's hash, so altering or removing one invalidates every entry after it.
+`verify_chain()` recomputes the chain and reports the first break, distinguishing an
+altered row (`entry_hash` mismatch) from a removed or reordered one (`previous_hash`
+mismatch). Append-only is enforced twice: SQLite triggers reject UPDATE and DELETE, and the
+module exposes no function to do either — a test asserts both, and another drops the
+triggers (as someone with file access could) and confirms the chain still catches the edit.
+
+Audit details carry **ids, counts and statuses only** — never page text, source snippets or
+raw model output. An audit trail that quoted the documents would become a second, unguarded
+copy of the content it exists to protect.
+
+**Degradation is a result, not a crash.** An expected failure is recorded as a stage result
+and the run continues into whatever stage can still do something useful: extraction fails →
+QR still decodes → the issuer lookup uses the QR id at lower trust; the issuer is
+unreachable → `source_unavailable` is stored and the earlier stages are untouched. **Each
+stage commits in its own transaction**, so a failure in stage 3 cannot roll back stages 1
+and 2.
+
+**Files are content-addressed.** Uploads are copied to `data/store/<ab>/<sha256><ext>`; the
+database stores the hash and path, never the bytes. Identical files therefore share one
+stored copy, and a resubmission is visible as a shared hash rather than something to
+discover later — which is also the groundwork for duplicate detection.
+
+**The pipeline computes no risk score and no overall status** beyond the per-document
+verification status step 4 already returns. Findings and statuses only; combining them is
+step 7.
+
+Tests: step 5's database, audit, storage and role tests are fast and unmarked; the tests
+that run the pipeline carry the `qr` marker, because the pipeline decodes real images and
+that is what makes them slow.
+
+### Step 6 decisions
+
+**Scope of the signature check: integrity only.** It answers one question — was
+this file modified after it was signed? — and never *who signed it*. No
+certificate-chain validation, no trust store. Enforced structurally rather than
+by convention: `signer_identity_verified` is hard-wired `False` with no code
+path that sets it otherwise, the claims are named `signer_name_unverified` and
+`claimed_signing_time_unverified` (same names in the database columns), and
+every result carries a `scope_note` in words. A corollary: chain validation is
+exactly the part of signature verification that goes online (OCSP, CRLs, AIA),
+so not doing it is why this module passes under a socket trap.
+
+**pyHanko locates, we compare.** pyHanko reads the signature fields,
+`/ByteRange` and the coverage level; hashlib plus asn1crypto recompute the
+digest and read the signed `messageDigest` out of the CMS. The split exists
+because of a trap: pyHanko's `external_digests` looks like the signed digest
+and is **not** — it is a cache of *recomputed* digests. An early version
+compared it against our own recomputation and reported `digest_matches: true`
+on a file with a visibly edited certificate number, because both sides were
+recomputed from the same tampered bytes. A test now asserts our recomputation
+agrees with pyHanko's `compute_digest()`, which is the genuinely independent
+part. The fixtures are produced by pyHanko for the same reason in reverse: if
+one piece of code both signed and verified, a shared misreading would pass its
+own tests.
+
+| Fixture | Coverage | Digest | Finding |
+|---|---|---|---|
+| clean | `entire_file` | matches | — |
+| one printed digit edited | `entire_file` | **differs** | `signature_digest_mismatch` (strong) |
+| incremental revision appended | `entire_revision` | matches | `bytes_after_signed_revision` (medium) |
+| `/ByteRange` shrunk | `contiguous_block_from_start` | **differs** | `signature_does_not_cover_document` (strong) **+** digest mismatch |
+| corrupt CMS | — | — | `signature_unparseable` (weak) |
+| unsigned | — | — | — unless config expects one |
+
+Two findings on the shrunk range is correct, not redundant: the range was
+altered, so the digest over the altered range cannot match either. "The
+signature lies about what it covers" and "the covered bytes do not hash right"
+are different claims and a reviewer needs both.
+
+**`medium` enters the strength vocabulary at step 6.** For an append after
+signing neither "strong" nor "weak" was honest — some legitimate tools add
+long-term validation data or a second signature — so the reason carries that
+caveat in words and the evidence carries the appended region's *byte length and
+object count*, never its content.
+
+**A malformed CMS aborts enumeration for the whole file**, so a raw `/ByteRange`
+scan is the fallback. Without it, a file with one deliberately corrupted
+signature reports as *unsigned*, which is the opposite of what is true.
+
+**`unsigned_where_signature_expected` is off by default.** Most EoA attachments
+are scans that were never signed; flagging every one would bury the real
+findings.
+
+#### Duplicate detection
+
+**Measured Hamming distances behind the threshold** (dhash, `hash_size: 16` =
+256 bits, page 1 at 150 DPI):
+
+| Distance | Case |
+|---|---|
+| 0 | identical content, second file |
+| 1 / 3 | same document, JPEG q70 / q40 |
+| 3 / 5 | same document, downscaled ×2 / ×4 |
+| 1 | **same certificate, one digit of the number edited** |
+| 4 / 6 / 8 / 12 | same document, rotated 0.5° / 1° / 2° / 3° |
+| 23 | same document, rotated 5° |
+| 2 – 6 | **same template, different institution** |
+| 22 – 26 | unrelated documents |
+
+`near_duplicate_max_distance: 12` catches every re-encode, rescale and rotation
+up to 3° while excluding every unrelated document (closest 22). A 5°-rotated
+scan is missed, accepted: a rotated photograph is the photo detector's problem,
+and a resubmitted file is caught by the exact hash and the number regardless.
+`python -m tests.make_duplicate_fixtures` reprints the table, and a test asserts
+the margin has not narrowed.
+
+Two results shaped the design. **A 64-bit hash is useless on document pages**:
+at `hash_size: 8` an unrelated document sat 8 bits away and a different
+institution's certificate sat **0** bits away — a page of sparse black text on
+white is almost all white and the hash is dominated by that. And **dhash beats
+phash here**, the opposite of the usual advice: a text page has almost no
+low-frequency DCT structure, so a 1° rotation moved phash 22 bits against
+dhash's 6, and 3° moved phash 58 — further than an unrelated document. Both are
+computed and stored; `compare_kind` picks one.
+
+**The finding no threshold can make.** A one-digit edit is 1 bit away, a
+template sibling 2–6, a genuine re-save 1–3. They overlap completely. So a
+near-duplicate page image is **never strong, in any context** — a measurement,
+not caution, and a test asserts it against the shipped config. It also means
+the image check cannot tell you a number was altered; the number comparison is
+what says that, and the number is what decides.
+
+**Severity by context, in config:**
+
+| Check | Other institution | Same institution |
+|---|---|---|
+| `duplicate_file_exact` | **strong** | weak — resubmission is normal |
+| `certificate_number_reuse` | **strong** | weak |
+| `qr_payload_reuse` | **strong** | weak |
+
+| `near_duplicate_page_image` context | Strength |
+|---|---|
+| numbers differ | weak — most likely one issuer's template |
+| same number, other institution | medium — corroborates the number finding |
+| same number, same institution | weak |
+| number unknown on either side | weak |
+
+An unlisted combination defaults to **weak**: a missing config entry is our
+mistake and must not manufacture a strong finding against an institution.
+"same number, other institution" is medium rather than strong because
+`certificate_number_reuse` already fired strongly on the number itself; the
+image adds weight to that one finding rather than a second accusation.
+
+**Self-exclusion.** A document is never a duplicate of its own earlier runs.
+Matches are found by **document id**, never by run.
+
+**Order independence, and why `cross_references` exists.** The set of
+relationships must not depend on processing order — which collides with *runs
+are never overwritten*, because when B arrives and matches A, the fact belongs
+to both documents but A's run finished before B existed. Resolved by storing it
+on neither run: `cross_references(document_a_id, document_b_id, kind,
+same_institution, evidence, discovered_in_run_id)`, with the pair **normalised**
+so the lower id is always `document_a_id`, a unique constraint on
+`(a, b, kind)`, and `cross_references_for_document()` matching on **either**
+column so the relationship shows on both sides of `get_application_report`. A
+test processes two documents in both orders on two fresh databases and compares
+the final sets.
+
+**Three new tables:** `signature_details` (one row per signature, written even
+for a clean file — a findings table alone cannot distinguish "one intact
+signature" from "no signature"), `perceptual_hashes` (document, run, page,
+kind, value, size — every configured kind stored so the corpus never has to be
+re-rendered; `hash_size` alongside the value because `hamming_distance` refuses
+to compare different widths rather than padding, and a short padded distance is
+exactly what this system reads as "possibly the same"), and `cross_references`.
+
+**Two new stages**, `signature_check` and `duplicate_check`, after
+`issuer_verification`. Signature findings use detector
+`certificate_authenticity`; duplicate findings use `duplicate_detection`,
+because a relationship between applications is not a statement about one
+certificate's authenticity and a reviewer filtering the queue wants them apart.
+`check_runs` gained `signature_config_version` and `duplicate_config_version`.
+
+**Reverse image search stays internal.** The corpus is our own database. No
+external image API, with a socket-trap test that would fail if one were added.
+
+Tests: the signature tests are fast and unmarked (signing is two RSA
+operations). The duplicate tests that run the pipeline carry `qr`, and the four
+that submit a JPEG also carry `ocr`, because real OCR is where their time goes.
+
+**Dependency note on pyHanko.** A heavy install — 20-odd transitive packages
+including aiohttp, lxml, oscrypto and cryptography. Accepted because
+re-deriving PDF revision boundaries by hand is where subtle bugs live, and
+because a reference implementation signing the fixtures is what stops our
+checker from testing only its own assumptions. Resolved on Python 3.10 /
+Windows: `pyhanko 0.38.0`, `pyhanko-certvalidator 0.33.0`, `asn1crypto 1.5.1`,
+`cryptography 50.0.2`, `imagehash 4.3.2` (with `scipy 1.15.3`,
+`PyWavelets 1.8.0`).
+
+**No private key is ever written to disk.** The signing key for the fixtures is
+a throwaway RSA key generated in memory on each run, so there is no key file to
+commit. `backend/tests/fixtures/` is gitignored in full.

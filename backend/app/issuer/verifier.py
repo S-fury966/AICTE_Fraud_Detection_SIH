@@ -137,11 +137,17 @@ def verify_certificate(
         result.lookups.append(lookup)
 
     result.status = most_severe([lookup.status for lookup in result.lookups], cfg)
-    # Union of the lookups' reasons, ordered by precedence rather than by
-    # lookup, so the reason that drove the document status reads first. In
-    # lookup order a clean primary lookup would put "all_fields_match" ahead
-    # of the mismatch that actually decided the status.
-    collected = {key for lookup in result.lookups for key in lookup.status_reasons}
+    # Reasons come only from the lookup(s) that produced the document status.
+    #
+    # A union across every lookup reads as self-contradiction: a document whose
+    # printed number verifies but whose QR id mismatches would carry both
+    # "all_fields_match" and "field_mismatch", and a reviewer cannot tell which
+    # one the status rests on. The per-lookup reasons are still in each
+    # lookup's own `status_reasons`, so nothing is lost.
+    deciding = [
+        lookup for lookup in result.lookups if lookup.status is result.status
+    ]
+    collected = {key for lookup in deciding for key in lookup.status_reasons}
     result.status_reasons = ordered_reasons(list(collected))
 
     for lookup in result.lookups:

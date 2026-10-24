@@ -1024,9 +1024,170 @@ def test_cli_reports_a_missing_file(capsys):
 
 
 def test_document_reasons_lead_with_the_deciding_one(client, sleeper):
-    """In lookup order a clean primary lookup would read first and mislead."""
+    """Ordered by precedence, so the reason the status rests on reads first."""
     result = run(client, sleeper, qr_certificate_id=OTHER_INSTITUTION_ID)
 
     assert result.status is VerificationStatus.MISMATCH_DETECTED
     assert result.status_reasons[0] == "field_mismatch"
-    assert "all_fields_match" in result.status_reasons
+
+
+# --------------------------------------------------------------------------
+# Housekeeping: contradictory reasons, and the comma-splitting rule
+# --------------------------------------------------------------------------
+
+
+def test_document_reasons_come_only_from_the_deciding_lookups(client, sleeper):
+    """A union across lookups reads as self-contradiction.
+
+    The printed number verifies and the QR id mismatches. Reporting both
+    "all_fields_match" and "field_mismatch" on the document leaves a reviewer
+    unable to tell which one the status rests on.
+    """
+    result = run(client, sleeper, qr_certificate_id=OTHER_INSTITUTION_ID)
+
+    assert result.status is VerificationStatus.MISMATCH_DETECTED
+    assert "field_mismatch" in result.status_reasons
+    assert "all_fields_match" not in result.status_reasons
+
+    # The clean lookup keeps its own reason; nothing is lost.
+    verified = [
+        lookup
+        for lookup in result.lookups
+        if lookup.status is VerificationStatus.VERIFIED
+    ]
+    assert verified and verified[0].status_reasons == ["all_fields_match"]
+
+
+# Reason keys that cannot be true of the same decision at the same time.
+_CONTRADICTORY_PAIRS = (
+    ("all_fields_match", "field_mismatch"),
+    ("all_fields_match", "not_found"),
+    ("all_fields_match", "issuer_status_revoked"),
+    ("all_fields_match", "issuer_status_suspended"),
+    ("all_fields_match", "source_unavailable"),
+    ("all_fields_match", "malformed_response"),
+    ("all_fields_match", "no_certificate_id"),
+    ("not_found", "field_mismatch"),
+    ("not_found", "issuer_pending"),
+)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        {},
+        {"qr_certificate_id": OTHER_INSTITUTION_ID},
+        {"qr_certificate_id": "NBTA/DEMO/2024/99999"},
+        {"document": submitted(certificate_number="NBTA/DEMO/2024/99999")},
+        {"document": submitted(institution_name="Gomati Valley College of Engineering")},
+        {"document": submitted(certificate_number=REVOKED_ID)},
+        {"document": submitted(certificate_number=PENDING_ID)},
+        {"document": submitted(certificate_number=None)},
+        {
+            "document": submitted(certificate_number=None),
+            "qr_certificate_id": ANCHOR_CERTIFICATE_ID,
+        },
+    ],
+)
+def test_no_result_carries_contradictory_reasons(client, sleeper, case):
+    result = run(client, sleeper, **case)
+
+    reasons = set(result.status_reasons)
+    for left, right in _CONTRADICTORY_PAIRS:
+        assert not (left in reasons and right in reasons), (
+            f"{left} and {right} both reported: {result.status_reasons}"
+        )
+
+    # And the same holds within any single lookup's own reasons.
+    for lookup in result.lookups:
+        own = set(lookup.status_reasons)
+        for left, right in _CONTRADICTORY_PAIRS:
+            assert not (left in own and right in own), lookup.status_reasons
+
+
+def test_a_programme_as_one_string_matches_the_registry(client, sleeper):
+    """The registry holds one comma-joined string."""
+    result = run(client, sleeper, document=submitted(programmes=[ANCHOR_PROGRAMME]))
+
+    assert comparison(result, "programmes").outcome is FieldOutcome.MATCH
+    assert comparison(result, "programmes").method == "exact_set_match"
+
+
+def test_the_same_programme_as_two_items_matches_the_registry(client, sleeper):
+    """And step 2's model routinely reads that same line as two items."""
+    result = run(
+        client,
+        sleeper,
+        document=submitted(
+            programmes=["Bachelor of Technology", "Computer Science and Engineering"]
+        ),
+    )
+
+    assert comparison(result, "programmes").outcome is FieldOutcome.MATCH
+    assert comparison(result, "programmes").method == "exact_set_match"
+
+
+def test_the_splitting_rule_is_applied_identically_to_both_sides(issuer_config):
+    """Canonicalisation is one function, used on submitted and issuer alike.
+
+    Both forms must reduce to the same set, and the comparison must be
+    symmetric: whichever side carries the comma cannot change the answer.
+    """
+    one_string = [ANCHOR_PROGRAMME]
+    two_items = ["Bachelor of Technology", "Computer Science and Engineering"]
+
+    canonical = programme_set(one_string, issuer_config)
+    assert canonical == programme_set(two_items, issuer_config)
+
+    from app.issuer.normalise import programmes_match
+
+    # Submitted comma-joined vs issuer split, and the reverse.
+    assert programmes_match(one_string, two_items, issuer_config)[0] is True
+    assert programmes_match(two_items, one_string, issuer_config)[0] is True
+    # And the reported sets are identical either way round.
+    assert (
+        programmes_match(one_string, two_items, issuer_config)[3]["submitted_set"]
+        == programmes_match(two_items, one_string, issuer_config)[3]["submitted_set"]
+    )
+
+
+def test_splitting_can_be_switched_off(issuer_config):
+    config = copy.deepcopy(issuer_config)
+    config["comparison"]["programmes"]["split_on_commas"] = False
+
+    assert programme_set([ANCHOR_PROGRAMME], config) != programme_set(
+        ["Bachelor of Technology", "Computer Science and Engineering"], config
+    )
+
+
+def test_a_comma_in_an_issuer_programme_name_is_split_into_independent_entries(
+    client, sleeper, issuer_config
+):
+    """Documents the current, deliberate consequence of the splitting rule.
+
+    The registry's "Master of Technology, Structural Engineering" is one
+    programme, but splitting turns it into two independent entries. With
+    allow_subset on, a document claiming only "Structural Engineering" then
+    matches. That is a known gap, recorded here so it is visible rather than
+    discovered later; closing it means requiring a submitted set to cover
+    every piece of an issuer entry, not merely some.
+    """
+    from app.issuer.normalise import programmes_match
+
+    issuer = ["Master of Technology, Structural Engineering"]
+
+    assert programme_set(issuer, issuer_config) == {
+        "master of technology",
+        "structural engineering",
+    }
+
+    matched, _, method, _ = programmes_match(
+        ["Structural Engineering"], issuer, issuer_config
+    )
+    assert matched is True
+    assert method == "subset_match"
+
+    # Turning allow_subset off is the available mitigation today.
+    strict = copy.deepcopy(issuer_config)
+    strict["comparison"]["programmes"]["allow_subset"] = False
+    assert programmes_match(["Structural Engineering"], issuer, strict)[0] is False

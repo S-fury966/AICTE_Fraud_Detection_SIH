@@ -1,0 +1,89 @@
+# Persistence, audit trail and pipeline settings (step 5).
+#
+# Bump `config_version` whenever a value changes: it is stamped onto every
+# check run alongside the other detectors' config versions.
+config_version: persistence-v2
+
+database:
+  # SQLAlchemy URL. SQLite for the prototype; the models use only portable
+  # column types, so a Postgres URL is a drop-in.
+  url: "sqlite:///data/sih_2026.db"
+  echo: false
+  # SQLite does not enforce foreign keys unless asked, per connection. Without
+  # this a deleted application would silently leave orphaned runs and findings.
+  sqlite_foreign_keys: true
+
+storage:
+  # Uploads are copied into a content-addressed tree: data/store/<ab>/<sha256>.
+  # The database keeps the hash and the path, never the bytes. Two identical
+  # files therefore share one stored copy.
+  root: "data/store"
+  # Fan-out directory from the first N hex characters of the hash, so one
+  # folder does not accumulate thousands of entries.
+  fanout_chars: 2
+
+roles:
+  # Every write takes an actor and a role. There is no login in the demo, so
+  # the role is asserted by the caller and recorded; it is validated against
+  # this list so a typo cannot invent a role that no policy covers.
+  allowed:
+    - officer
+    - senior_reviewer
+    - admin
+    # Used for writes the pipeline makes on its own behalf.
+    - system
+
+runs:
+  # Raw model responses are kept for audit: a reviewer must be able to see what
+  # the model actually said, not only what our validation kept. They live in
+  # their own table, separate from the validated fields, so they are never
+  # mistaken for verified data.
+  store_raw_llm_responses: true
+  # Per-page text from step 1. Off would make a run much smaller but would
+  # break the evidence link from a field back to the page it came from.
+  store_page_text: true
+
+audit:
+  # Each entry hashes its own content plus the previous entry's hash, so an
+  # altered or removed entry breaks the chain from that point on.
+  hash_algorithm: sha256
+  # SQLite triggers that reject UPDATE and DELETE on audit_log. The code
+  # exposes no update or delete function either; this is the second lock.
+  enforce_append_only: true
+
+review:
+  # Lifecycle of a finding. A finding starts `open`; a human moves it.
+  statuses:
+    - open
+    - confirmed
+    - dismissed
+    - needs_more_info
+  # Actions a reviewer can record. `comment` leaves the status unchanged.
+  actions:
+    confirm: confirmed
+    dismiss: dismissed
+    request_more_info: needs_more_info
+    comment: null
+
+pipeline:
+  # Stages run in this order. A stage that cannot run is recorded as skipped
+  # with its reason, never omitted: a missing stage result is indistinguishable
+  # from a stage that passed.
+  stages:
+    - extraction
+    - certificate_fields
+    - qr_checks
+    - issuer_verification
+    # Added in step 6. Both run after issuer_verification: the duplicate check
+    # needs the validated certificate number and the QR payload from the
+    # earlier stages, and the signature check is ordered next to them so a
+    # reviewer reads all the file-level evidence together.
+    - signature_check
+    - duplicate_check
+  # The detector name written on every finding this pipeline produces. Later
+  # detectors (faculty, photos) will add their own.
+  detector_name: certificate_authenticity
+  # Duplicate detection gets its own detector name: it is a statement about the
+  # relationship between two applications, not about one certificate's
+  # authenticity, and a reviewer filtering the queue will want them apart.
+  duplicate_detector_name: duplicate_detection

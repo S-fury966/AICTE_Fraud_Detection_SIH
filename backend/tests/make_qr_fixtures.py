@@ -223,6 +223,13 @@ def build_all() -> dict[str, Path]:
         verify_url(cert_id=ALTERED_CERT_ID),
     )
     built["no_qr_pdf"] = _pdf_without_qr(FIXTURE_DIR / "certificate_no_qr.pdf")
+    # Certificate text printing 00417, with a QR encoding 00418. The altered
+    # digit is only detectable when both sources are present, so a bare QR
+    # image cannot exercise the cross-check.
+    built["altered_id_pdf"] = _pdf_with_embedded_qr(
+        FIXTURE_DIR / "certificate_altered_qr.pdf",
+        verify_url(cert_id=ALTERED_CERT_ID),
+    )
     built["link_mismatch_pdf"] = _pdf_with_embedded_qr(
         FIXTURE_DIR / "certificate_link_mismatch.pdf",
         verify_url(),

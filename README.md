@@ -58,13 +58,15 @@ approval path, and access to real government databases.
 | 2. Certificate field extraction (LLM) | [`app/certificates`](backend/app/certificates/), [`app/llm`](backend/app/llm/) | **Done** |
 | 3. QR detection and cross-check | [`app/qr`](backend/app/qr/) | **Done** |
 | 4. Mock issuer + verification client | [`app/mock_issuer`](backend/app/mock_issuer/), [`app/issuer`](backend/app/issuer/) | **Done** |
-| 5. Duplicate detection, PDF signatures | — | Not started |
-| 6. Faculty and photo detectors | — | Not started |
-| 7. Risk scoring, API, dashboard | — | Not started |
+| 5. Persistence, audit trail, pipeline | [`app/db`](backend/app/db/), [`app/pipeline`](backend/app/pipeline/) | **Done** |
+| 6. PDF signatures, duplicate detection | [`app/signatures`](backend/app/signatures/), [`app/duplicates`](backend/app/duplicates/), [`app/similarity`](backend/app/similarity/) | **Done** |
+| 7. Faculty and photo detectors | — | Not started |
+| 8. Risk scoring, API, dashboard | — | Not started |
 
-213 tests pass. There is no database, no application-level HTTP API and no
-dashboard yet — the four finished detectors run from the command line and emit
-JSON, which is what the later steps will consume.
+330 tests pass. There is no application-level HTTP API and no dashboard yet:
+one command runs the six detector stages over a document and stores every
+result, finding and audit entry, and a second prints the stored report as
+JSON — which is what the dashboard will read.
 
 ---
 
@@ -95,8 +97,31 @@ PDF / image
          │                            │
          └──────────┬─────────────────┘
                     ▼
+┌──────────────────────────────────────────────────────────┐
+│ 5. Signature integrity            app/signatures        │
+│    was the file changed after signing? Signer identity  │
+│    is NEVER verified — no chain, no trust store         │
+└──────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌──────────────────────────────────────────────────────────┐
+│ 6. Duplicate detection            app/duplicates        │
+│    file hash, certificate number, QR payload, and a     │
+│    perceptual hash of page 1 — against our own corpus   │
+│    only. Severity depends on whether the other side is  │
+│    the same institution.                                │
+└──────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌──────────────────────────────────────────────────────────┐
+│ Persistence                 app/db + app/pipeline       │
+│    one entry point; every stage result stored; findings │
+│    in one table; append-only hash-chained audit trail   │
+└──────────────────────────────────────────────────────────┘
+                    │
+                    ▼
         findings + evidence + audit trail
-        (risk scoring: step 7, not yet built)
+        (risk scoring: step 8, not yet built)
 ```
 
 Each stage returns errors **as data** — a status and a reason — rather than
@@ -156,6 +181,13 @@ python -m app.qr <file.pdf> --extraction step2.json > step3.json
 
 # 4 — issuer verification, with the mock issuer in-process
 python -m app.issuer step2.json --qr step3.json --in-process
+
+# Or all four at once, storing everything (steps 1-4 plus persistence)
+python -m app.pipeline <file.pdf> --institution "<name>"     --actor officer.sharma --role officer --in-process-issuer
+
+# Read the stored results back, and check the audit chain
+python -m app.reports <application_id>
+python -m app.audit verify
 ```
 
 Every command prints JSON. `--compact` for one line.
@@ -172,8 +204,8 @@ python -m app.issuer step2.json     # uses issuer.base_url from config
 
 ```bash
 cd backend
-python -m pytest                                        # 213 tests
-python -m pytest -m "not ocr and not llm and not qr"    # 166, ~2s
+python -m pytest                                        # 266 tests
+python -m pytest -m "not ocr and not llm and not qr"    # 191, ~3s
 ```
 
 | Marker | What it costs |
@@ -280,6 +312,30 @@ Other decisions worth knowing:
 - Retries cover transport errors, 429 and 5xx. A 404 and a malformed body are
   answers, and repeating the request cannot change either.
 
+### 5. Persistence and audit — [`app/db/README.md`](backend/app/db/README.md)
+
+One entry point chains steps 1–4 over a document and stores every stage result,
+extracted field, QR detection, lookup and finding.
+
+**Runs are never overwritten.** A re-run creates a new run row; nothing mutates
+an existing one. A reviewer must be able to see that a document was clean under
+last month's rules and is flagged under this month's, so each run records the
+config versions *and* hashes it was judged under.
+
+**The audit trail is append-only and hash-chained.** Each entry hashes its own
+content plus the previous entry's hash, so altering or removing one invalidates
+everything after it. `python -m app.audit verify` recomputes the chain and
+names the first break. Enforced twice — SQLite triggers reject UPDATE and
+DELETE, and no code path offers either. Details carry ids and statuses only,
+never document text or raw model output.
+
+**Degradation is a result, not a crash.** Extraction fails and the QR still
+decodes, feeding the issuer lookup at lower trust. The issuer is unreachable
+and `source_unavailable` is stored with the earlier stages intact. A skipped
+stage still gets a row with its reason, because a missing row is
+indistinguishable from a stage that passed. Each stage commits in its own
+transaction.
+
 ---
 
 ## Verification status taxonomy
@@ -308,6 +364,7 @@ always be traced to the rules that produced it.
 | [`config/certificate_extraction.yaml`](config/certificate_extraction.yaml) | LLM provider and model, prompt version, retries, snippet/exact-value rules, date handling |
 | [`config/qr_checks.yaml`](config/qr_checks.yaml) | decoder order, preprocessing ladder, domain allowlist, shortener list, finding strengths |
 | [`config/issuer_verification.yaml`](config/issuer_verification.yaml) | issuer base URL, timeouts and retries, name/programme/grade comparison rules, status mapping |
+| [`config/persistence.yaml`](config/persistence.yaml) | database URL, file store, allowed roles, review lifecycle, audit enforcement |
 
 `SIH_CONFIG_DIR` points the loader at a different directory — useful for an
 offline demo or a reproducible evaluation run.
@@ -360,6 +417,13 @@ backend/
     qr/             step 3: decoders, preprocessing, payload parsing, checks
     mock_issuer/    the synthetic registry, seed script, FastAPI stand-in
     issuer/         step 4: client, comparison, status mapping
+    signatures/     step 6: signature integrity (integrity only, by design)
+    duplicates/     step 6: cross-application duplicate detection
+    similarity/     perceptual hashing, shared with the photo detector
+    db/             step 5: models, engine, audit chain, repository
+    pipeline/       step 5-6: the single entry point over every stage
+    reports/        CLI: read stored results back
+    audit/          CLI: verify the audit chain
   tests/            fixtures are generated by script, not committed
 config/             all thresholds, allowlists and mappings
 data/demo/          the seeded issuer registry
@@ -368,8 +432,10 @@ CLAUDE.md           design decisions, constraints, and why each was made
 
 ## Stack
 
-Python 3.10 · PyMuPDF · RapidOCR · OpenCV + zxing-cpp · FastAPI · PyYAML ·
-pytest. SQLite via SQLAlchemy and a React dashboard are planned for step 7.
+Python 3.10 · PyMuPDF · RapidOCR · OpenCV + zxing-cpp · FastAPI ·
+SQLAlchemy 2 over SQLite · PyYAML · pytest. A React dashboard is planned for
+step 8. The models use only column types both SQLite and Postgres render
+natively, so Postgres is a drop-in.
 
 The LLM layer is provider-agnostic behind a single `complete(prompt) -> text`
 method, written against the OpenAI-compatible REST shape rather than a vendor
@@ -384,4 +450,5 @@ Together or a local server is a config edit.
   confirmed when, and why. Start here to understand *why* the code looks like
   this.
 - Module READMEs: [extraction](backend/app/extraction/README.md) ·
-  [qr](backend/app/qr/README.md) · [issuer](backend/app/issuer/README.md)
+  [qr](backend/app/qr/README.md) · [issuer](backend/app/issuer/README.md) ·
+  [db](backend/app/db/README.md)
