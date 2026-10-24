@@ -103,6 +103,11 @@ class AuditRecord:
     raw_responses: list[str] = field(default_factory=list)
     input_tokens: int | None = None
     output_tokens: int | None = None
+    # True when the response came from the on-disk cache rather than the
+    # provider. Recorded because a stored run must be able to say whether the
+    # model was actually asked - token counts of zero and an unchanged answer
+    # are otherwise indistinguishable from a very consistent model.
+    cache_hit: bool = False
 
 
 @dataclass

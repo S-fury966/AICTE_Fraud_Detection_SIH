@@ -1,0 +1,253 @@
+# Evaluation dataset generation (step 7).
+#
+# Everything here is deterministic from `seed`. The same seed must give a
+# byte-identical manifest and labels, because an evaluation whose dataset
+# reshuffles cannot be compared with last week's numbers - and a detection rate
+# you cannot compare is not a measurement.
+#
+# Bump `config_version` whenever a value changes: it is stamped on the manifest
+# and on the labels.
+config_version: eval-generation-v1
+
+seed: 20260724
+
+output:
+  # All generated output. Gitignored in full - only this config and the
+  # generator code are committed.
+  root: "data/eval"
+  documents_dir: "documents"
+  manifest: "manifest.json"
+  labels: "labels.json"
+  world: "world.json"
+  # A registry written for the evaluation alone. The demo registry under
+  # data/demo/ is never touched: the eval set needs its own records, and a
+  # generator that mutated the demo data would silently change step 4's tests.
+  issuer_registry: "issuer_registry.json"
+  results_dir: "results"
+
+split:
+  # Deterministic from the seed and stratified by case type, so dev and
+  # holdout hold the same mix of cases rather than whichever ones happened to
+  # be generated first.
+  dev_ratio: 0.7
+  # Tune on dev. Read holdout once, at the end. The runner prints this as a
+  # warning on every run, because the discipline is the only thing protecting
+  # the holdout number from becoming meaningless.
+  holdout_warning: true
+
+world:
+  institution_count: 12
+  # Fictional accreditation bodies. One of them issues no QR codes, which is a
+  # hard negative: a missing QR must not be read as a missing check.
+  issuing_bodies:
+    - key: nbta
+      name: "National Board of Technical Accreditation (Demo)"
+      abbreviation: "NBTA"
+      domain: "verify.nbta-demo.test"
+      id_prefix: "NBTA"
+      uses_qr: true
+    - key: scte
+      name: "State Council for Technical Education (Demo)"
+      abbreviation: "SCTE"
+      domain: "verify.scte-demo.test"
+      id_prefix: "SCTE"
+      uses_qr: true
+    - key: raab
+      name: "Regional Academic Assessment Bureau (Demo)"
+      abbreviation: "RAAB"
+      domain: "verify.raab-demo.test"
+      id_prefix: "RAAB"
+      uses_qr: true
+    - key: ipqc
+      name: "Institute Programme Quality Council (Demo)"
+      abbreviation: "IPQC"
+      domain: "verify.ipqc-demo.test"
+      id_prefix: "IPQC"
+      # This body prints no QR code at all.
+      uses_qr: false
+    - key: hteb
+      name: "Higher Technical Education Board (Demo)"
+      abbreviation: "HTEB"
+      domain: "verify.hteb-demo.test"
+      id_prefix: "HTEB"
+      uses_qr: true
+
+templates:
+  # Five layouts that differ in more than cosmetics: wording, whether the
+  # fields are a table or free text, fonts, colour, seal and watermark
+  # position, QR placement. The step 6 Hamming thresholds were measured on ONE
+  # layout, so varying them is the whole point of this set.
+  - key: classic
+    issuer: nbta
+    style: free_text
+    heading_size: 15
+    body_size: 11
+    accent: [0.12, 0.23, 0.44]
+    seal: circle
+    seal_position: bottom_right
+    watermark: false
+    qr_position: bottom_right
+    qr_size: 120
+  - key: tabular
+    issuer: scte
+    style: table
+    heading_size: 14
+    body_size: 10
+    accent: [0.40, 0.13, 0.13]
+    seal: hexagon
+    seal_position: top_right
+    watermark: true
+    qr_position: bottom_left
+    qr_size: 96
+  - key: ledger
+    issuer: raab
+    style: table
+    heading_size: 16
+    body_size: 11
+    accent: [0.10, 0.34, 0.26]
+    seal: square
+    seal_position: bottom_left
+    watermark: false
+    qr_position: top_right
+    qr_size: 140
+  - key: plain
+    issuer: ipqc
+    style: free_text
+    heading_size: 13
+    body_size: 12
+    accent: [0.20, 0.20, 0.20]
+    seal: none
+    seal_position: bottom_right
+    watermark: false
+    # This body issues no QR codes.
+    qr_position: none
+    qr_size: 0
+  - key: bilingual
+    issuer: hteb
+    style: free_text
+    heading_size: 15
+    body_size: 11
+    accent: [0.24, 0.16, 0.42]
+    seal: circle
+    seal_position: top_right
+    watermark: true
+    qr_position: bottom_right
+    qr_size: 110
+    # A Devanagari heading line, rendered only if a font covering the script
+    # is installed. Skipped cleanly and reported otherwise - never silently
+    # dropped, because a missing script is a gap in coverage.
+    #
+    # This was briefly disabled: MuPDF's subsetting of Windows' Nirmala.ttc
+    # turned out not to be byte-reproducible, about one render in forty. The
+    # cause was then found to be more general (MuPDF is occasionally
+    # nondeterministic for any layout), and `templates.stable_bytes` fixes it
+    # at the source by requiring two agreeing renders. Measured again
+    # afterwards: 60 of 60 identical, with the Devanagari in the text layer.
+    devanagari_heading: true
+
+forms:
+  # How the finished document reaches us. Mixed across the set on purpose: a
+  # detector that only works on a digital PDF is not a detector.
+  #
+  #   digital_pdf   - a real text layer, no OCR needed
+  #   scanned_pdf   - a page image wrapped in a PDF, OCR required
+  #   jpg_scan      - a bare image
+  #   signed_pdf    - digital PDF signed with a throwaway in-memory key
+  weights:
+    digital_pdf: 0.40
+    scanned_pdf: 0.25
+    jpg_scan: 0.20
+    signed_pdf: 0.15
+
+noise:
+  # Scan degradation levels. Recorded per document in the labels, so the QR
+  # decode rate can be reported *by noise level* - an aggregate decode rate
+  # hides whether the failures are all in one bucket.
+  render_dpi: 200
+  levels:
+    none:
+      rotation_degrees: 0.0
+      blur_radius: 0.0
+      jpeg_quality: 95
+      brightness: 1.0
+      contrast: 1.0
+      noise_sigma: 0.0
+    light:
+      rotation_degrees: 0.4
+      blur_radius: 0.3
+      jpeg_quality: 85
+      brightness: 1.03
+      contrast: 1.02
+      noise_sigma: 1.5
+    medium:
+      rotation_degrees: 1.1
+      blur_radius: 0.6
+      jpeg_quality: 70
+      brightness: 0.94
+      contrast: 1.08
+      noise_sigma: 3.0
+    hard:
+      # Still legible to a person, but a genuine test for the decoder. A few
+      # cases use this deliberately so the decode rate has a hard bucket.
+      rotation_degrees: 1.9
+      blur_radius: 1.0
+      jpeg_quality: 55
+      brightness: 0.88
+      contrast: 1.14
+      noise_sigma: 5.0
+  weights:
+    none: 0.35
+    light: 0.35
+    medium: 0.22
+    hard: 0.08
+
+issuer_states:
+  # How many genuine certificates sit in an awkward issuer state. These are
+  # NOT forgeries: the document is honest and the registry says something a
+  # reviewer needs to see. Scored on `expected_issuer_status`, never counted as
+  # fraud.
+  revoked: 2
+  suspended: 2
+  expired: 2
+  pending: 2
+
+cases:
+  # Genuine, nothing wrong.
+  clean: 14
+
+  # Hard negatives: genuine documents that LOOK like something. These carry
+  # `must_not` lists, and the false-positive rate is measured on them - a
+  # detector that flags these is worse than one that misses a forgery, because
+  # it costs an honest institution a review.
+  hard_negative_abbreviated_institution: 2
+  hard_negative_missing_grade: 2
+  hard_negative_noisy_scan: 2
+  hard_negative_blurred_qr: 2
+  hard_negative_same_institution_resubmission: 2
+  hard_negative_same_template_pair: 2
+  hard_negative_signed_untouched: 2
+  hard_negative_issuer_without_qr: 2
+
+  # Injected frauds. At least three of each.
+  number_edited_qr_untouched: 3
+  number_edited_qr_consistent: 3
+  qr_lookalike_domain: 3
+  qr_userinfo_trick: 3
+  qr_punycode_or_shortener: 3
+  qr_id_belongs_to_other_institution: 3
+  unknown_certificate: 3
+  institution_name_swapped: 3
+  dates_extended: 3
+  signed_then_tampered: 3
+  signed_then_appended: 3
+  duplicate_file_other_institution: 3
+  number_reuse_other_institution: 3
+  resaved_copy_with_edit: 3
+
+deceptive_hosts:
+  # Fraud payload shapes for the QR cases. All under .test, so none can
+  # resolve even if something tried - and nothing in app/qr ever tries.
+  lookalike: "verify.nbta-demo.test.evil-mirror.test"
+  userinfo_host: "evil-mirror.test"
+  punycode: "xn--80ak6aa92e.test"
+  shortener: "bit.ly/3xEvalDemo"

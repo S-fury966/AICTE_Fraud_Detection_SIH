@@ -435,6 +435,9 @@ def _build_audit(
         raw_responses=list(raw_responses) if include_raw else [],
         input_tokens=completion.input_tokens if completion else None,
         output_tokens=completion.output_tokens if completion else None,
+        cache_hit=bool(
+            (completion.metadata or {}).get("cache_hit") if completion else False
+        ),
     )
 
 

@@ -1,0 +1,80 @@
+# Evaluation runner settings (step 7).
+#
+# Bump `config_version` whenever a value changes: it is stamped on results.json.
+config_version: eval-run-v1
+
+mode:
+  # oracle | live
+  #
+  # oracle  - the stub provider returns exactly the fields the generator
+  #           printed, with their real snippets taken from the extracted page
+  #           text, so the non-LLM detectors are measured without model noise.
+  #           Extraction accuracy is meaningless in this mode and is not
+  #           reported.
+  # live    - the configured provider. Costs tokens.
+  default: oracle
+
+provider:
+  # Null means "whatever config/certificate_extraction.yaml selects". A string
+  # here, or --provider on the command line, overrides it - for a cheaper
+  # model on a long run.
+  override: null
+  # Overrides the provider's model, for picking a cheaper one on the same
+  # endpoint.
+  model_override: null
+
+cache:
+  # The on-disk LLM response cache (app/llm/cache.py). On by default for an
+  # evaluation: a free tier has a daily token cap, and re-running the same set
+  # would otherwise spend it on prompts already answered.
+  #
+  # The key covers the prompt text, model, provider and prompt version - see
+  # the module docstring for why each is needed.
+  enabled: true
+  root: "data/eval/llm_cache"
+  # True to serve hits but never write new entries: for a measurement run that
+  # must not change what a later run would see.
+  read_only: false
+
+limits:
+  # Null means no limit. --limit N on the command line overrides.
+  max_applications: null
+  # Stop the run if this many consecutive applications raise. A pipeline that
+  # degrades gracefully should never hit it; if it does, something is wrong
+  # with the harness rather than with one document.
+  consecutive_failure_limit: 5
+
+issuer:
+  # The evaluation registry, not the demo one.
+  registry: "data/eval/issuer_registry.json"
+  # The mock issuer always runs in-process through Starlette's TestClient, so
+  # no port is opened and nothing outside this process is contacted.
+  in_process: true
+
+pipeline:
+  # Fixed evaluation date, so "expired" means the same thing on every run. A
+  # floating "today" would make an expiry case flip from clean to expired
+  # between runs with no change to the data.
+  as_of: "2026-07-01"
+  actor: "evaluation.harness"
+  role: "system"
+  document_type: "accreditation_certificate"
+
+scoring:
+  # A finding at or above this strength counts as "flagged" for the
+  # document-level precision and recall. Weak findings are informational by
+  # design, so counting them would make precision a measure of how chatty the
+  # detectors are.
+  flagged_min_strength: medium
+  # The strength ladder, weakest first. Used for "at or above".
+  strength_order:
+    - weak
+    - medium
+    - strong
+
+output:
+  results: "results.json"
+  per_application: "per_application.csv"
+  summary: "summary.md"
+  # Percentile for the processing-time report, alongside the mean.
+  latency_percentile: 95

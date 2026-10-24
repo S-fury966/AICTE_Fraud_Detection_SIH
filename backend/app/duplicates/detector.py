@@ -58,6 +58,7 @@ from .models import (
     Finding,
     FindingType,
     Match,
+    SuppressedFinding,
 )
 
 
@@ -177,14 +178,16 @@ def detect_duplicates(
 
     cap = int(get(cfg, "output.max_matches_per_check", 25))
     result.matches = _apply_cap(matches, cap, result)
-    result.findings = _build_findings(context, result.matches, cfg)
+    # Relationships are recorded BEFORE findings are filtered, so suppression
+    # can never remove a cross_references row.
+    _record_cross_references(session, context, result.matches, run_id, cfg)
+    result.findings = _build_findings(session, context, result.matches, cfg, result)
 
     if not others and result.status is DuplicateStatus.OK:
         # Not a failure: the first document into an empty corpus has nothing to
         # be a duplicate of. Recorded so an empty result is readable.
         result.status = DuplicateStatus.NO_CORPUS
 
-    _record_cross_references(session, context, result.matches, run_id, cfg)
     return result
 
 
@@ -665,11 +668,24 @@ def cross_references_for_document(
 
 
 def _build_findings(
-    context: DocumentContext, matches: list[Match], cfg: dict[str, Any]
+    session: Session,
+    context: DocumentContext,
+    matches: list[Match],
+    cfg: dict[str, Any],
+    result: DuplicateCheckResult,
 ) -> list[Finding]:
     findings: list[Finding] = []
     for match in matches:
         context_key = _context_key(match, context)
+
+        withheld = _template_noise_suppression(
+            session, context, match, context_key, cfg
+        )
+        if withheld is not None:
+            if bool(get(cfg, "template_noise_suppression.record_suppressions", True)):
+                result.suppressed_findings.append(withheld)
+            continue
+
         strength = strength_for(match.kind, context_key, cfg)
         findings.append(
             Finding(
@@ -689,6 +705,144 @@ def _build_findings(
             )
         )
     return findings
+
+
+def _template_noise_suppression(
+    session: Session,
+    context: DocumentContext,
+    match: Match,
+    context_key: str,
+    cfg: dict[str, Any],
+) -> SuppressedFinding | None:
+    """Withhold a near-duplicate finding that is explained by a shared template.
+
+    Off by default, and narrow by design. Every applicant to one accreditation
+    body submits a certificate on that body's template, and the measurements in
+    `config/duplicate_checks.yaml` show a template sibling is indistinguishable
+    from a re-saved copy at any threshold - so on a real corpus this finding
+    would fire on nearly every document and stop being read.
+
+    The load-bearing condition is the issuer one. Two numbers that the issuing
+    body independently vouches for, as two *distinct* records, are two
+    different certificates; their pages looking alike is then a fact about the
+    template rather than about either document. Without that confirmation, two
+    differing numbers are equally consistent with one document having been
+    edited - so **a near-copy whose number the issuer does not know is always
+    still flagged.** That is the case most worth a reviewer's time, and exactly
+    the one a naive "the numbers differ, so it must be the template" rule would
+    throw away.
+
+    Returns the withheld finding when it applies, or None to keep the finding.
+    """
+    if match.kind is not FindingType.NEAR_DUPLICATE_IMAGE:
+        return None
+    if not bool(get(cfg, "template_noise_suppression.enabled", False)):
+        return None
+
+    mine = context.certificate_number
+    theirs = match.evidence.get("other_certificate_number")
+
+    if bool(get(cfg, "template_noise_suppression.require_numbers_differ", True)):
+        if not _numbers_differ(mine, theirs):
+            # Same number, or a number missing on one side. Either way this is
+            # not two certificates that happen to share a layout.
+            return None
+
+    if bool(
+        get(cfg, "template_noise_suppression.require_different_institutions", True)
+    ):
+        if match.same_institution:
+            return None
+
+    if bool(
+        get(
+            cfg,
+            "template_noise_suppression.require_both_numbers_known_to_issuer",
+            True,
+        )
+    ):
+        mine_record = _issuer_record_for(session, context.document_id, mine)
+        theirs_record = _issuer_record_for(
+            session, match.other_document_id, theirs
+        )
+        if mine_record is None or theirs_record is None:
+            # At least one number is not in the issuer's records. Kept.
+            return None
+        if mine_record == theirs_record:
+            # Both numbers resolve to the *same* record, which is the opposite
+            # of two independent certificates.
+            return None
+
+    return SuppressedFinding(
+        type=match.kind.value,
+        other_document_id=match.other_document_id,
+        rule="template_noise_suppression",
+        reason=(
+            "withheld from the review queue: the two certificate numbers "
+            f"differ ({mine} vs {theirs}), both are known to the issuer as "
+            "distinct records, and the institutions differ - so the visual "
+            "similarity is explained by a shared issuer template. The "
+            "relationship is still recorded in cross_references."
+        ),
+        evidence={
+            **match.evidence,
+            "strength_context": context_key,
+            "other_document_id": match.other_document_id,
+            "other_institution": match.other_institution_name,
+            "suppression_conditions_met": [
+                "certificate_numbers_differ",
+                "both_numbers_known_to_issuer_as_distinct_records",
+                "different_institutions",
+            ],
+        },
+    )
+
+
+def _issuer_record_for(
+    session: Session, document_id: int, certificate_number: Any
+) -> str | None:
+    """The issuer record a number resolved to for this document, if any.
+
+    Reads the stored `verification_lookups` rows, so it works identically for
+    the document under test - whose lookups the issuer stage wrote earlier in
+    this same run - and for a document processed weeks ago. Only an outcome of
+    `found` counts: pending, unavailable, malformed and not-found all mean the
+    issuer did not vouch for anything.
+
+    Returns a stable identifier for the matched record, so two numbers
+    resolving to the *same* record can be told apart from two resolving to
+    different ones.
+    """
+    from ..db.models import CheckRun, VerificationLookup
+
+    if not certificate_number:
+        return None
+    target = _normalise_number(str(certificate_number))
+
+    rows = session.execute(
+        select(
+            VerificationLookup.certificate_id,
+            VerificationLookup.outcome,
+            VerificationLookup.issuer_record,
+        )
+        .join(CheckRun, VerificationLookup.run_id == CheckRun.id)
+        .where(CheckRun.document_id == document_id)
+        .order_by(CheckRun.id.desc(), VerificationLookup.id)
+    ).all()
+
+    for certificate_id, outcome, record in rows:
+        if str(outcome) != "found":
+            continue
+        if not certificate_id or _normalise_number(str(certificate_id)) != target:
+            continue
+        if isinstance(record, dict):
+            identifier = record.get("certificate_id") or record.get("id")
+            if identifier:
+                return str(identifier)
+        # No record body stored, but the lookup did find one. The id that was
+        # looked up identifies it well enough for "same record or not".
+        return target
+    return None
 
 
 def _context_key(match: Match, context: DocumentContext) -> str:

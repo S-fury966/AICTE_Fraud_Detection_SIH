@@ -1167,3 +1167,230 @@ def test_nothing_in_duplicate_detection_touches_the_network(
 
     assert result.matches or result.matches == []
     assert attempts == []
+
+# --------------------------------------------------------------------------
+# Template-noise suppression (off by default)
+# --------------------------------------------------------------------------
+
+
+def suppressing(config: dict) -> dict:
+    enabled = copy.deepcopy(config)
+    enabled["template_noise_suppression"]["enabled"] = True
+    return enabled
+
+
+@pytest.mark.qr
+def test_suppression_is_off_by_default(samples, submit, database):
+    """Suppressing a finding is hiding evidence, so it is never the default."""
+    submit(samples["original"], institution=INSTITUTION_A, certificate_id=CERT_ID)
+    second = submit(
+        samples["legitimate_template_pair"],
+        institution=INSTITUTION_B,
+        certificate_id=SIBLING_CERT_ID,
+    )
+
+    findings = findings_of(database, second.run_id, "duplicate_detection")
+    assert any(
+        f["type"] == FindingType.NEAR_DUPLICATE_IMAGE.value for f in findings
+    )
+    payload = stage(second, "duplicate_check").payload
+    assert payload["suppressed_findings"] == []
+
+
+@pytest.mark.qr
+def test_suppression_withholds_the_finding_when_all_conditions_hold(
+    samples, submit, database, duplicates_config
+):
+    """Numbers differ, both known to the issuer as distinct records, different
+    institutions.
+
+    The demo registry holds both `00417` and `00418`, which is what makes this
+    the "issuer vouches for both" case. The visually similar pair whose number
+    the issuer does *not* know is the test below, and it must behave the
+    opposite way.
+    """
+    enabled = suppressing(duplicates_config)
+
+    submit(
+        samples["original"],
+        institution=INSTITUTION_A,
+        certificate_id=CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+    second = submit(
+        samples["one_digit_edited"],
+        institution=INSTITUTION_B,
+        certificate_id=EDITED_CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+
+    findings = findings_of(database, second.run_id, "duplicate_detection")
+    assert not any(
+        f["type"] == FindingType.NEAR_DUPLICATE_IMAGE.value for f in findings
+    )
+
+    # Withheld, not forgotten.
+    payload = stage(second, "duplicate_check").payload
+    withheld = payload["suppressed_findings"]
+    assert len(withheld) == 1
+    assert withheld[0]["type"] == FindingType.NEAR_DUPLICATE_IMAGE.value
+    assert withheld[0]["rule"] == "template_noise_suppression"
+    assert "shared issuer template" in withheld[0]["reason"]
+    assert withheld[0]["evidence"]["hamming_distance"] is not None
+
+
+@pytest.mark.qr
+def test_suppression_never_removes_the_cross_reference_row(
+    samples, submit, database, duplicates_config
+):
+    """The relationship is a fact. Suppression is a decision about the queue."""
+    enabled = suppressing(duplicates_config)
+
+    first = submit(
+        samples["original"],
+        institution=INSTITUTION_A,
+        certificate_id=CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+    second = submit(
+        samples["one_digit_edited"],
+        institution=INSTITUTION_B,
+        certificate_id=EDITED_CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+
+    with database.session() as session:
+        rows = session.query(CrossReference).all()
+        a_side = cross_references_for_document(session, first.document_id)
+
+    kinds = {row.kind for row in rows}
+    assert FindingType.NEAR_DUPLICATE_IMAGE.value in kinds
+    # And still readable from both ends.
+    assert FindingType.NEAR_DUPLICATE_IMAGE.value in {
+        entry["kind"] for entry in a_side
+    }
+
+
+@pytest.mark.qr
+def test_a_near_copy_whose_number_the_issuer_does_not_know_is_still_flagged(
+    samples, submit, database, duplicates_config
+):
+    """The case suppression must never swallow.
+
+    Two differing numbers are only evidence of two certificates if the issuer
+    vouches for both. An unknown number is equally consistent with a document
+    having been edited - and it is the case most worth a reviewer's time, so a
+    naive "the numbers differ" rule would throw away exactly the wrong one.
+    """
+    enabled = suppressing(duplicates_config)
+
+    submit(
+        samples["original"],
+        institution=INSTITUTION_A,
+        certificate_id=CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+    # `00903` is printed on the page, so step 2 validates it - but it is not in
+    # the issuer registry, so the lookup cannot confirm it exists. Every other
+    # condition for suppression is satisfied; this one is not.
+    second = submit(
+        samples["legitimate_template_pair"],
+        institution=INSTITUTION_B,
+        certificate_id=SIBLING_CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+
+    findings = findings_of(database, second.run_id, "duplicate_detection")
+    near = [
+        f for f in findings if f["type"] == FindingType.NEAR_DUPLICATE_IMAGE.value
+    ]
+    assert len(near) == 1, "an unknown number must never be suppressed"
+    assert near[0]["strength"] == "weak"
+
+    payload = stage(second, "duplicate_check").payload
+    assert payload["suppressed_findings"] == []
+
+
+@pytest.mark.qr
+def test_suppression_does_not_apply_when_the_numbers_are_the_same(
+    samples, submit, database, duplicates_config
+):
+    """Same number on two documents is the opposite of a template coincidence."""
+    enabled = suppressing(duplicates_config)
+
+    submit(
+        samples["original"],
+        institution=INSTITUTION_A,
+        certificate_id=CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+    second = submit(
+        samples["exact_copy"],
+        institution=INSTITUTION_B,
+        certificate_id=CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+
+    findings = findings_of(database, second.run_id, "duplicate_detection")
+    assert any(
+        f["type"] == FindingType.NEAR_DUPLICATE_IMAGE.value for f in findings
+    )
+    assert stage(second, "duplicate_check").payload["suppressed_findings"] == []
+
+
+@pytest.mark.qr
+def test_suppression_does_not_apply_within_one_institution(
+    samples, submit, database, duplicates_config
+):
+    """A shared template across *one* institution's own submissions is not the
+    noise this rule exists to quieten."""
+    enabled = suppressing(duplicates_config)
+
+    submit(
+        samples["original"],
+        institution=INSTITUTION_A,
+        certificate_id=CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+    # Identical to the suppressed case except that both documents belong to one
+    # institution, so the institution condition is the only one failing.
+    second = submit(
+        samples["one_digit_edited"],
+        institution=INSTITUTION_A,
+        certificate_id=EDITED_CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+
+    findings = findings_of(database, second.run_id, "duplicate_detection")
+    assert any(
+        f["type"] == FindingType.NEAR_DUPLICATE_IMAGE.value for f in findings
+    )
+    assert stage(second, "duplicate_check").payload["suppressed_findings"] == []
+
+
+@pytest.mark.qr
+def test_suppression_leaves_every_other_finding_type_alone(
+    samples, submit, database, duplicates_config
+):
+    """It is scoped to near_duplicate_page_image and nothing else."""
+    enabled = suppressing(duplicates_config)
+
+    submit(
+        samples["original"],
+        institution=INSTITUTION_A,
+        certificate_id=CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+    second = submit(
+        samples["exact_copy"],
+        institution=INSTITUTION_B,
+        certificate_id=CERT_ID,
+        configs={"duplicate_checks": enabled},
+    )
+
+    types = {
+        f["type"] for f in findings_of(database, second.run_id, "duplicate_detection")
+    }
+    assert FindingType.EXACT_FILE.value in types
+    assert FindingType.CERTIFICATE_NUMBER.value in types
+

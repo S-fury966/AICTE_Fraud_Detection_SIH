@@ -75,6 +75,32 @@ class Finding:
 
 
 @dataclass
+class SuppressedFinding:
+    """A finding that was observed and then withheld from the reviewer's queue.
+
+    Recorded rather than dropped. Suppression is a presentation decision about
+    what is worth a reviewer's attention; it is never a reason to forget what
+    was measured, and a run must never report fewer findings than it saw
+    without saying so.
+    """
+
+    type: str
+    other_document_id: int
+    rule: str
+    reason: str
+    evidence: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "type": self.type,
+            "other_document_id": self.other_document_id,
+            "rule": self.rule,
+            "reason": self.reason,
+            "evidence": self.evidence,
+        }
+
+
+@dataclass
 class ComparisonSkipped:
     """A check that could not run, recorded so its silence is not read as a pass."""
 
@@ -117,6 +143,9 @@ class DuplicateCheckResult:
     matches: list[Match] = field(default_factory=list)
     findings: list[Finding] = field(default_factory=list)
     comparisons_skipped: list[ComparisonSkipped] = field(default_factory=list)
+    # Findings that fired and were then withheld by template-noise
+    # suppression. Their cross_references rows are still stored.
+    suppressed_findings: list[SuppressedFinding] = field(default_factory=list)
     # Hashes computed for this document this run, stored for later comparisons.
     hashes_stored: list[dict[str, Any]] = field(default_factory=list)
     audit: DuplicateAudit | None = None
@@ -128,6 +157,9 @@ class DuplicateCheckResult:
             "matches": [m.to_dict() for m in self.matches],
             "findings": [f.to_dict() for f in self.findings],
             "comparisons_skipped": [c.to_dict() for c in self.comparisons_skipped],
+            "suppressed_findings": [
+                s.to_dict() for s in self.suppressed_findings
+            ],
             "hashes_stored": self.hashes_stored,
             "audit": self.audit.to_dict() if self.audit else None,
         }

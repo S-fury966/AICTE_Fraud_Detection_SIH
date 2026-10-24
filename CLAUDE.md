@@ -163,6 +163,13 @@ detectors. Do not add an automated decision path.
   `cross_references`. The pipeline is now six stages. Details in
   `backend/app/signatures/README.md` and `backend/app/duplicates/README.md`.
 
+- **Step 7 — evaluation dataset and runner: done.** `backend/evaluation` (a package
+  the app does not import), `config/eval_generation.yaml`,
+  `config/eval_run.yaml`. 80 synthetic applications across 5 layouts, 4 forms and
+  4 noise levels, with labels written from the recipes. The on-disk LLM response
+  cache added in `backend/app/llm/cache.py`. All output under `data/eval/`
+  (gitignored). Detectors unchanged by this step.
+
 ### The snippet-validation rule (step 2's core guard)
 Every non-null value the model returns must be traceable to the source text, or code
 discards it. Two tiers:
@@ -387,6 +394,46 @@ Tests: step 5's database, audit, storage and role tests are fast and unmarked; t
 that run the pipeline carry the `qr` marker, because the pipeline decodes real images and
 that is what makes them slow.
 
+### Scoring rules that follow from step 6 (read before step 8)
+
+**A clean signature result is NEUTRAL. It must never lower risk.**
+
+`present_and_byte_range_intact` means one thing only: the bytes covered by the
+signature still hash to what was signed. It says nothing whatsoever about who
+signed, because signer identity is not verified — there is no certificate
+chain and no trust store (see "Scope of the signature check" below).
+
+So anyone can take an edited document, sign it with a key they generated
+themselves, and obtain a perfectly intact signature over the edited content.
+Treating that as reassurance would make the signature check **worse than
+useless**: it would hand a risk *reduction* to exactly the documents that went
+to the most trouble, while an honest unsigned scan got nothing. The incentive
+runs the wrong way.
+
+Therefore, in step 8's weighting:
+
+- `signature_absent` → contributes **0**. Most EoA attachments are scans that
+  were never signed.
+- `present_and_byte_range_intact` → contributes **0**. Not a negative weight,
+  not a bonus, not a tie-breaker.
+- `modified_after_signing` / `unverifiable` → contribute through their findings
+  (`signature_digest_mismatch`, `signature_does_not_cover_document`,
+  `bytes_after_signed_revision`, `signature_unparseable`), as any other
+  finding does.
+
+Only findings move the risk level. The absence of a finding is never evidence
+of soundness anywhere in this system, and the signature check is the place
+where that temptation is strongest.
+
+**The Hamming thresholds were measured on one synthetic template.** Every
+number in the duplicate-detection table below came from a single certificate
+layout rendered by one script. A perceptual hash is sensitive to layout — the
+distances for a dense table, a watermarked page, a two-column form or a
+photographed scan need not sit anywhere near these — so `12` is calibrated for
+the step 6 fixtures and **not yet shown to hold in general**. Step 7 re-measures
+it across varied layouts (`python -m evaluation.distances`) and reports whether
+it still separates what it should.
+
 ### Step 6 decisions
 
 **Scope of the signature check: integrity only.** It answers one question — was
@@ -549,3 +596,144 @@ Windows: `pyhanko 0.38.0`, `pyhanko-certvalidator 0.33.0`, `asn1crypto 1.5.1`,
 **No private key is ever written to disk.** The signing key for the fixtures is
 a throwaway RSA key generated in memory on each run, so there is no key file to
 commit. `backend/tests/fixtures/` is gitignored in full.
+
+### Step 7 decisions
+
+**The independence rule.** Nothing in `backend/evaluation` imports or calls a
+detector, a validator or the pipeline in order to decide what a case *is*.
+Labels come from the recipe that built each document — the generator knows it
+edited a digit because it edited the digit. Only `run.py` touches `app`, and
+only to call `process_document()` and read results back out of the database; it
+never asks a detector what a document is. Two tests enforce the boundary by
+scanning the package's imports.
+
+**Commands:**
+
+```bash
+python -m evaluation.generate [--seed N] [--out DIR] [--only CASE,CASE]
+python -m evaluation.run [--mode oracle|live] [--split dev|holdout|all]
+                         [--limit N] [--provider NAME] [--model NAME]
+                         [--shuffle-seed N] [--no-cache]
+python -m evaluation.distances [--kind dhash] [--size 16] [--json]
+```
+
+**Label format**, one entry per application in `data/eval/labels.json`:
+`application_id`, `institution`, `case_type`, `is_fraud`, `fraud_types`,
+`split`, `printed_fields` (what is on the page — the ground truth for
+extraction), `qr_payload`, `expected`, `expected_issuer_status`, `must_not`,
+`processing_order`, `noise`, `form`, `template`, `document`,
+`pair_application_id`, `recipe_details`.
+
+`expected` is a list of **groups**. A group is satisfied when *any* of its
+listed finding types fires at or above its own `min_strength`. That shape is
+deliberate: there is usually more than one honest way for a detector to notice
+the same thing, and demanding one particular type would turn a design change
+into a false miss. A group marked `either_side` may also be satisfied by a
+finding on the paired document, because which run discovers a relationship
+depends on processing order and the measurement must not.
+
+`must_not` is the other half, and on a decision-support system it matters more:
+a finding at medium or strong against an honest institution costs a real
+review. Hard negatives carry explicit `must_not` lists and the false-positive
+rate is measured on them.
+
+**Dev / holdout rule.** Deterministic from the seed, **stratified by case
+type** (a holdout missing a case type says nothing about that case type), about
+70/30. **Tune on dev. Read holdout once, at the end.** The runner prints that
+warning before and after every run, because nothing in the code can enforce
+it — changing a threshold after looking at holdout turns the holdout number
+into another dev number.
+
+**Oracle mode measures the deterministic detectors, not the model.** The stub
+returns exactly the printed fields, with `source_snippet` values grounded in
+the *real extracted page text*. Two consequences, both intended: extraction
+accuracy is **not reported** in this mode (the answers are the ground truth, so
+the figure would be 100% and mean nothing), and the snippet guard **still
+applies** — on a badly OCR'd scan the printed value genuinely is not in the
+page text and step 2 discards the field, exactly as it would for a real model.
+The guard is part of the system under test.
+
+**Determinism was the hard part, and the cause was not what it looked like.**
+Three separate things had to be fixed before the same seed gave the same bytes:
+
+1. PyMuPDF writes a **random trailer `/ID`** on every save, and regenerates the
+   second element even when the first is pinned. Normalised to zeros at equal
+   length (`templates.make_deterministic`).
+2. **Uncompressed output is nondeterministic.** With `deflate=False` about one
+   render in sixty differed on identical input; with `deflate=True`, zero in
+   sixty. So documents are compressed, and only `signed_then_tampered` renders
+   uncompressed — it has to edit a printed digit inside the signed byte range,
+   which needs the text literally present in the file. That document is signed
+   and therefore already outside the byte guarantee.
+3. **MuPDF is occasionally nondeterministic anyway**, for any layout, once an
+   image is involved — roughly one render in twenty-five. `templates.stable_bytes`
+   renders until two consecutive attempts agree, which pins the output to the
+   common answer and costs one extra render per document. It **raises** rather
+   than giving up, because a generator that silently produced a
+   non-reproducible dataset would undermine every number taken from it.
+
+A Devanagari heading was briefly disabled while this was being chased (the
+embedded-font subset looked like the culprit). With `stable_bytes` in place it
+is deterministic — measured 60 of 60 identical, with the script present in the
+text layer — so it is back on. Note that the text layer reads the ASCII space
+inside that heading back as U+00A0; harmless, since no field value shares the
+line, but exactly the sort of thing that would break step 2's exact-value guard
+if one ever did.
+
+**Signed documents are the one remaining exception**, and it is stated rather
+than hidden: a PDF signature embeds a signing time and a freshly generated
+throwaway key, so signed bytes differ between runs. The manifest and labels
+record `document_sha256: null` and `reproducible_bytes: false` for them, and
+the manifest names them in `non_reproducible_documents` with the reason. The
+manifest and labels themselves are byte-identical.
+
+**The evaluation has its own issuer registry** at
+`data/eval/issuer_registry.json`. `data/demo/` is never touched: it backs step
+4's tests, and a generator that mutated it would silently change what those
+tests mean.
+
+**The evaluation widens the QR allowlist, and that is config, not a detector
+change.** This world has five issuing bodies; the shipped allowlist names the
+demo one. Without the widening, every genuine certificate from four of five
+bodies was reported as pointing at an unapproved domain — which it was, under
+the demo's policy. `run.qr_config_for_world()` derives the allowlist from
+`world.json`, adds each host with `allow_subdomains: false`, and a test asserts
+the lookalike, userinfo and punycode fraud shapes are still rejected.
+
+**Two generator defects the first run exposed**, both mine and both fixed: the
+`clean` cases drew validity windows short enough that some had genuinely
+expired by the fixed evaluation date (so the detector was right and the dataset
+was wrong), and the distances module bucketed
+`number_reuse_other_institution` as a recompressed copy when it deliberately
+re-renders on a *different* layout — charging the perceptual hash with a miss
+it was never given.
+
+**The document-level precision metric needs its breakdown read with it.** As
+specified it is "flagged at medium or above versus `is_fraud`", which charges
+as a false positive every genuine document the system was *right* to
+surface — a certificate the issuer revoked, suspended or let expire is honest
+and still needs a reviewer. `document_level` therefore also reports
+`genuine_flagged_as_expected`, `genuine_flagged_unexpectedly` and
+`precision_counting_expected_flags_as_correct`. Without that, the headline
+number invites someone to "improve" precision by suppressing the issuer-state
+findings.
+
+**The LLM response cache** (`app/llm/cache.py`) is a provider decorator, keyed
+on prompt text + model + provider + prompt version. All four are needed: leave
+any out and a cached answer is eventually served for a different question, and
+the prompt version in particular is versioned precisely so a change to it
+invalidates earlier results. Temperature is deliberately *not* in the key —
+config pins it at 0, and including it would invite reading a
+non-zero-temperature cache as reproducible. A hit sets `metadata["cache_hit"]`,
+which flows into step 2's audit record, so a stored run always says whether the
+model was actually asked. The prompt itself is never written to disk (it
+contains document text); only its hash is.
+
+**No new dependencies.** Everything step 7 needs was already pinned —
+pymupdf, pillow, numpy, segno, pyhanko, cryptography, imagehash. `.env` is read
+through the project's own `app/core/env.py`, not python-dotenv.
+
+Tests: `tests/test_evaluation.py`. The generator-determinism, manifest-consistency,
+split, safety, metric-maths, cache and oracle tests are fast. The five-application
+end-to-end run and the no-network trap carry `qr` and `ocr`; full-dataset
+generation carries the new `slow` marker.

@@ -2,7 +2,7 @@
 #
 # Bump `config_version` whenever a value changes: it is stamped onto every
 # check run alongside the other detectors' config versions.
-config_version: duplicate-checks-v1
+config_version: duplicate-checks-v2
 
 checks:
   # Each can be turned off independently. All four are cheap; the switches
@@ -63,6 +63,47 @@ perceptual_hash:
   # away and a same-template sibling sits 2-6 bits away, both inside the band a
   # genuine re-save occupies. No threshold separates them. That is why a
   # near-duplicate image is never a strong finding here - see `strength` below.
+
+template_noise_suppression:
+  # OFF by default.
+  #
+  # The problem it addresses: every applicant to one accreditation body submits
+  # a certificate on that body's template, and the measurements in
+  # `perceptual_hash` below show a template sibling is indistinguishable from a
+  # re-saved copy at any threshold. On a real corpus the near-duplicate finding
+  # would therefore fire on nearly every document and stop being read.
+  #
+  # It is OFF by default because suppressing a finding is hiding evidence, and
+  # that should be a deliberate, recorded choice rather than a default.
+  enabled: false
+
+  # When enabled, the near_duplicate_page_image FINDING is suppressed only when
+  # ALL of these hold. The `cross_references` row is still stored either way:
+  # the relationship is a fact, and suppression is a presentation decision about
+  # the reviewer's queue, not a reason to forget what was observed.
+  #
+  #   1. the two certificate numbers differ
+  #   2. BOTH numbers resolve to a record the issuer knows, and those records
+  #      are distinct
+  #   3. the two institutions differ
+  #
+  # Condition 2 is the one that carries the weight. Two different numbers that
+  # the issuing body independently vouches for are two different certificates,
+  # and their pages looking alike is then a fact about the template rather than
+  # about either document. Without that confirmation, two differing numbers are
+  # just as consistent with one document having been edited.
+  #
+  # So a near-copy whose number the issuer does not know is ALWAYS still
+  # flagged - an unknown number is the case most worth a reviewer's time, and it
+  # is exactly the case a naive "numbers differ, so it's a template" rule would
+  # throw away.
+  require_numbers_differ: true
+  require_both_numbers_known_to_issuer: true
+  require_different_institutions: true
+
+  # Suppressed findings are counted and listed in the result, so a run never
+  # silently reports fewer findings than it observed.
+  record_suppressions: true
 
 context:
   # A document is never a duplicate of its own earlier runs. Re-running the
