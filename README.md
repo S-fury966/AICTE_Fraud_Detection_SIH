@@ -13,7 +13,7 @@
 ![Tests](https://img.shields.io/badge/tests-442_passing-2f9e6e?style=flat-square)
 ![Data](https://img.shields.io/badge/data-100%25_synthetic-f5cf4c?style=flat-square)
 <p align="center">
-  <a href="YOUR_GOOGLE_DRIVE_LINK">
+  <a href="https://drive.google.com/file/d/1oI86Y7J7cBgEzf35xttYyKb6ITUx1fEz/view?usp=drive_link">
     <img src="https://img.shields.io/badge/▶_DEMO_VIDEO-555555?style=for-the-badge&logo=google-drive&logoColor=white" alt="Watch Authentiq Demo"/>
   </a>
 </p>
