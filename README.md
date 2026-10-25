@@ -381,3 +381,11 @@ Tailwind 4 · Vite.
 *Preliminary indicators for review, not findings of fact.*
 
 </div>
+---
+
+## 🎥 Project Demo
+
+Watch the AUTHENTIQ demonstration to explore the application's
+features and document verification workflow.
+
+[▶️ Watch the AUTHENTIQ Demo](https://drive.google.com/file/d/1oI86Y7J7cBgEzf35xttYyKb6ITUx1fEz/view?usp=drive_link)
