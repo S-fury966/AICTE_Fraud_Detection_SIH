@@ -383,9 +383,8 @@ Tailwind 4 · Vite.
 </div>
 ---
 
-## 🎥 Project Demo
-
-Watch the AUTHENTIQ demonstration to explore the application's
-features and document verification workflow.
-
-[▶️ Watch the AUTHENTIQ Demo](https://drive.google.com/file/d/1oI86Y7J7cBgEzf35xttYyKb6ITUx1fEz/view?usp=drive_link)
+<p align="center">
+  <a href="https://drive.google.com/file/d/1oI86Y7J7cBgEzf35xttYyKb6ITUx1fEz/view?usp=drive_link">
+    <img src="https://img.shields.io/badge/▶_DEMO_VIDEO-555555?style=for-the-badge&logo=google-drive&logoColor=white" alt="Watch AUTHENTIQ Demo Video"/>
+  </a>
+</p>
