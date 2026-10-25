@@ -12,7 +12,11 @@
 ![React](https://img.shields.io/badge/React_19-TypeScript-1c1c1f?style=flat-square)
 ![Tests](https://img.shields.io/badge/tests-442_passing-2f9e6e?style=flat-square)
 ![Data](https://img.shields.io/badge/data-100%25_synthetic-f5cf4c?style=flat-square)
-
+<p align="center">
+  <a href="https://drive.google.com/file/d/1oI86Y7J7cBgEzf35xttYyKb6ITUx1fEz/view?usp=drive_link">
+    <img src="https://img.shields.io/badge/▶_DEMO_VIDEO-555555?style=for-the-badge&logo=google-drive&logoColor=white" alt="Watch Authentiq Demo"/>
+  </a>
+</p>
 <img src="docs/screenshots/queue.png" alt="Authentiq review queue" width="100%" />
 
 </div>
@@ -381,3 +385,4 @@ Tailwind 4 · Vite.
 *Preliminary indicators for review, not findings of fact.*
 
 </div>
+---
