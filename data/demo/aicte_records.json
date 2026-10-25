@@ -1,0 +1,2639 @@
+{
+  "records_version": "aicte-records-demo-v1",
+  "seed": 20261025,
+  "note": "MOCK AICTE records. Every institution, person, faculty id and coordinate is invented. No real AICTE system was consulted.",
+  "institutions": [
+    {
+      "aicte_id": "AICTE-DEMO-0001",
+      "name": "Shantiniketan Institute of Technology",
+      "city": "Bolpur (demo)",
+      "location": {
+        "lat": 23.6693,
+        "lon": 87.6857,
+        "city": "Bolpur (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "shantiniketan.html",
+      "departments": {
+        "Computer Science and Engineering": 14,
+        "Electronics and Communication Engineering": 10,
+        "Mechanical Engineering": 9,
+        "Applied Sciences and Humanities": 8
+      },
+      "intake": {
+        "Computer Science and Engineering": 210,
+        "Electronics and Communication Engineering": 150,
+        "Mechanical Engineering": 120
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-01001",
+          "name": "Dr. Bharat Menon",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01002",
+          "name": "Dr. Manav Ghosh",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01003",
+          "name": "Dr. Kavya Gill",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01004",
+          "name": "Dr. Charu Chandran",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01005",
+          "name": "Dr. Aditi Lal",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01006",
+          "name": "Dr. Gaurav Bhatt",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01007",
+          "name": "Mr. Yash Upadhyay",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01008",
+          "name": "Dr. Varun Saxena",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01009",
+          "name": "Prof. Esha Saxena",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-01010",
+          "name": "Dr. Meera Upadhyay",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01011",
+          "name": "Dr. Eshan Bhatt",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01012",
+          "name": "Mr. Esha Ghosh",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01013",
+          "name": "Prof. Ananya Varma",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01014",
+          "name": "Prof. Yash Rao",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01015",
+          "name": "Dr. Dhruv Iyer",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01016",
+          "name": "Dr. Lalit Kulkarni",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01017",
+          "name": "Dr. Manav Edathil",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01018",
+          "name": "Dr. Dhruv Oberoi",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01019",
+          "name": "Prof. Waheeda Joshi",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01020",
+          "name": "Dr. Naveen Varma",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01021",
+          "name": "Dr. Tarun Fernandes",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01022",
+          "name": "Mr. Gita Joshi",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01023",
+          "name": "Mr. Jatin Dutta",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01024",
+          "name": "Ms. Zoya Bhatt",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01025",
+          "name": "Dr. Arjun Wadia",
+          "department": "Mechanical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01026",
+          "name": "Dr. Farah Chandran",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01027",
+          "name": "Dr. Harini Menon",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01028",
+          "name": "Prof. Hemant Joshi",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-01029",
+          "name": "Mr. Yash Hegde",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-01030",
+          "name": "Dr. Pallavi Wadia",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01031",
+          "name": "Ms. Deepa Fernandes",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01032",
+          "name": "Dr. Meera Ghosh",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01033",
+          "name": "Mr. Aditi Yadav",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01034",
+          "name": "Dr. Waheeda Dutta",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01035",
+          "name": "Dr. Rohan Upadhyay",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01036",
+          "name": "Dr. Esha Upadhyay",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01037",
+          "name": "Dr. Aarav Zaveri",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01038",
+          "name": "Prof. Dhruv Lal",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-01039",
+          "name": "Dr. Indira Oberoi",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-01040",
+          "name": "Ms. Kabir Hegde",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-01041",
+          "name": "Ms. Lakshmi Kulkarni",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0002",
+      "name": "Malabar Institute of Technology",
+      "city": "Kozhikode (demo)",
+      "location": {
+        "lat": 11.2588,
+        "lon": 75.7804,
+        "city": "Kozhikode (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "malabar.html",
+      "departments": {
+        "Computer Science and Engineering": 12,
+        "Civil Engineering": 8,
+        "Electrical Engineering": 9,
+        "Applied Sciences and Humanities": 7
+      },
+      "intake": {
+        "Computer Science and Engineering": 180,
+        "Civil Engineering": 120,
+        "Electrical Engineering": 120
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-02001",
+          "name": "Dr. Kabir Acharya",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02002",
+          "name": "Dr. Manav Qureshi",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02003",
+          "name": "Dr. Nandini Varma",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02004",
+          "name": "Dr. Bhavna Fernandes",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02005",
+          "name": "Dr. Esha Thakur",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02006",
+          "name": "Ms. Waheeda Yadav",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02007",
+          "name": "Dr. Bharat Oberoi",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02008",
+          "name": "Mr. Bhavna Hegde",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02009",
+          "name": "Prof. Lakshmi Ghosh",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02010",
+          "name": "Dr. Gita Upadhyay",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02011",
+          "name": "Ms. Nandini Rao",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02012",
+          "name": "Dr. Gita Yadav",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02013",
+          "name": "Dr. Meera Dutta",
+          "department": "Civil Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02014",
+          "name": "Dr. Uma Joshi",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02015",
+          "name": "Dr. Jaya Kulkarni",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02016",
+          "name": "Dr. Nandini Saxena",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02017",
+          "name": "Ms. Waheeda Iyer",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02018",
+          "name": "Mr. Bharat Varma",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02019",
+          "name": "Mr. Aditi Ghosh",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02020",
+          "name": "Prof. Firoz Nair",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02021",
+          "name": "Dr. Bharat Acharya",
+          "department": "Electrical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02022",
+          "name": "Dr. Chirag Ghosh",
+          "department": "Electrical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02023",
+          "name": "Dr. Kavya Varma",
+          "department": "Electrical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02024",
+          "name": "Dr. Gaurav Iyer",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02025",
+          "name": "Ms. Aarav Thakur",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-02026",
+          "name": "Prof. Farah Deshmukh",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02027",
+          "name": "Dr. Lalit Gill",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02028",
+          "name": "Mr. Aditi Bhatt",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02029",
+          "name": "Dr. Farah Oberoi",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02030",
+          "name": "Dr. Farah Fernandes",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02031",
+          "name": "Dr. Rohan Kulkarni",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02032",
+          "name": "Dr. Lakshmi Varma",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02033",
+          "name": "Mr. Chirag Oberoi",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02034",
+          "name": "Dr. Indira Rao",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02035",
+          "name": "Prof. Aarav Chandran",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-02036",
+          "name": "Dr. Aarav Edathil",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0003",
+      "name": "Deccan Plateau Institute of Engineering",
+      "city": "Pune (demo)",
+      "location": {
+        "lat": 18.5204,
+        "lon": 73.8567,
+        "city": "Pune (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "deccan.html",
+      "departments": {
+        "Computer Science and Engineering": 12,
+        "Mechanical Engineering": 10,
+        "Information Technology": 8,
+        "Applied Sciences and Humanities": 6
+      },
+      "intake": {
+        "Computer Science and Engineering": 180,
+        "Mechanical Engineering": 150,
+        "Information Technology": 120
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-03001",
+          "name": "Dr. Yash Thakur",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03002",
+          "name": "Dr. Jatin Varma",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03003",
+          "name": "Dr. Esha Fernandes",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03004",
+          "name": "Dr. Hemant Varma",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03005",
+          "name": "Dr. Esha Gill",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03006",
+          "name": "Ms. Indira Acharya",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03007",
+          "name": "Prof. Aarav Yadav",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03008",
+          "name": "Prof. Harini Edathil",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03009",
+          "name": "Mr. Zoya Edathil",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-03010",
+          "name": "Ms. Varun Kulkarni",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03011",
+          "name": "Ms. Kavya Iyer",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03012",
+          "name": "Mr. Kavya Nair",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03013",
+          "name": "Dr. Bharat Kapoor",
+          "department": "Mechanical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03014",
+          "name": "Dr. Rohan Joshi",
+          "department": "Mechanical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03015",
+          "name": "Dr. Omkar Pillai",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03016",
+          "name": "Dr. Charu Wadia",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03017",
+          "name": "Dr. Kabir Menon",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03018",
+          "name": "Mr. Indira Edathil",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03019",
+          "name": "Prof. Chirag Edathil",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03020",
+          "name": "Dr. Farah Chatterjee",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03021",
+          "name": "Mr. Lalit Nair",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-03022",
+          "name": "Ms. Sanya Upadhyay",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03023",
+          "name": "Dr. Jaya Upadhyay",
+          "department": "Information Technology",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03024",
+          "name": "Dr. Pallavi Hegde",
+          "department": "Information Technology",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03025",
+          "name": "Dr. Esha Dutta",
+          "department": "Information Technology",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03026",
+          "name": "Prof. Sanya Varma",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03027",
+          "name": "Ms. Naveen Kulkarni",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03028",
+          "name": "Mr. Eshan Acharya",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-03029",
+          "name": "Ms. Lalit Deshmukh",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03030",
+          "name": "Dr. Gita Bhatt",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03031",
+          "name": "Dr. Ananya Pillai",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03032",
+          "name": "Dr. Aditi Rao",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03033",
+          "name": "Ms. Pallavi Zaveri",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03034",
+          "name": "Prof. Gaurav Wadia",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03035",
+          "name": "Prof. Arjun Chandran",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-03036",
+          "name": "Dr. Charu Chatterjee",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0004",
+      "name": "Aravalli Institute of Technology and Research",
+      "city": "Udaipur (demo)",
+      "location": {
+        "lat": 24.5854,
+        "lon": 73.7125,
+        "city": "Udaipur (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "aravalli.html",
+      "departments": {
+        "Computer Science and Engineering": 11,
+        "Civil Engineering": 7,
+        "Mechanical Engineering": 8,
+        "Applied Sciences and Humanities": 6
+      },
+      "intake": {
+        "Computer Science and Engineering": 180,
+        "Civil Engineering": 120,
+        "Mechanical Engineering": 120
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-04001",
+          "name": "Dr. Meera Fernandes",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04002",
+          "name": "Dr. Pallavi Pillai",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04003",
+          "name": "Dr. Eshan Saxena",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04004",
+          "name": "Dr. Aarav Kulkarni",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04005",
+          "name": "Ms. Bhavna Edathil",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-04006",
+          "name": "Dr. Varun Joshi",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04007",
+          "name": "Dr. Lalit Zaveri",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04008",
+          "name": "Mr. Uma Varma",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04009",
+          "name": "Dr. Kavya Edathil",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04010",
+          "name": "Prof. Tarun Oberoi",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04011",
+          "name": "Mr. Nandini Deshmukh",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04012",
+          "name": "Dr. Aarav Varma",
+          "department": "Civil Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04013",
+          "name": "Dr. Zoya Banerjee",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04014",
+          "name": "Dr. Lakshmi Bhatt",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04015",
+          "name": "Ms. Dhruv Rao",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-04016",
+          "name": "Mr. Ishaan Upadhyay",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04017",
+          "name": "Mr. Eshan Chandran",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04018",
+          "name": "Prof. Gaurav Upadhyay",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04019",
+          "name": "Dr. Lalit Edathil",
+          "department": "Mechanical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04020",
+          "name": "Dr. Firoz Pillai",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04021",
+          "name": "Dr. Bharat Chatterjee",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04022",
+          "name": "Ms. Jaya Fernandes",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04023",
+          "name": "Ms. Bharat Dutta",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04024",
+          "name": "Ms. Lalit Qureshi",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04025",
+          "name": "Dr. Jatin Thakur",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04026",
+          "name": "Prof. Tarun Menon",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04027",
+          "name": "Dr. Varun Bhatt",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04028",
+          "name": "Dr. Yash Menon",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04029",
+          "name": "Dr. Jaya Banerjee",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04030",
+          "name": "Prof. Indira Joshi",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04031",
+          "name": "Dr. Bhavna Bhatt",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-04032",
+          "name": "Mr. Arjun Rao",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0005",
+      "name": "Gomati Valley College of Engineering",
+      "city": "Lucknow (demo)",
+      "location": {
+        "lat": 26.8467,
+        "lon": 80.9462,
+        "city": "Lucknow (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "gomati.html",
+      "departments": {
+        "Computer Science and Engineering": 10,
+        "Electronics and Communication Engineering": 8,
+        "Civil Engineering": 7,
+        "Applied Sciences and Humanities": 6
+      },
+      "intake": {
+        "Computer Science and Engineering": 240,
+        "Electronics and Communication Engineering": 120,
+        "Civil Engineering": 120
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-05001",
+          "name": "Dr. Kabir Joshi",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05002",
+          "name": "Dr. Zoya Kulkarni",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05003",
+          "name": "Dr. Charu Bhatt",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05004",
+          "name": "Dr. Tarun Gill",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05005",
+          "name": "Prof. Yash Kapoor",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-05006",
+          "name": "Dr. Kavya Hegde",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05007",
+          "name": "Dr. Gita Kulkarni",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05008",
+          "name": "Dr. Sanya Pillai",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05009",
+          "name": "Dr. Gita Fernandes",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05010",
+          "name": "Dr. Deepa Menon",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05011",
+          "name": "Dr. Eshan Deshmukh",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05012",
+          "name": "Dr. Omkar Saxena",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05013",
+          "name": "Dr. Gita Banerjee",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05014",
+          "name": "Prof. Kabir Banerjee",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05015",
+          "name": "Ms. Aditi Oberoi",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05016",
+          "name": "Mr. Hemant Pillai",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-05017",
+          "name": "Ms. Yash Nair",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05018",
+          "name": "Ms. Esha Varma",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05019",
+          "name": "Dr. Farah Bhatt",
+          "department": "Civil Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05020",
+          "name": "Dr. Naveen Chandran",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05021",
+          "name": "Dr. Uma Fernandes",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05022",
+          "name": "Dr. Jatin Banerjee",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05023",
+          "name": "Ms. Naveen Fernandes",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05024",
+          "name": "Mr. Bhavna Gill",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05025",
+          "name": "Mr. Manav Saxena",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-05026",
+          "name": "Dr. Nandini Nair",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05027",
+          "name": "Dr. Nandini Gill",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05028",
+          "name": "Prof. Jaya Bhatt",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05029",
+          "name": "Dr. Kabir Iyer",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05030",
+          "name": "Dr. Ishaan Acharya",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-05031",
+          "name": "Prof. Uma Kapoor",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0006",
+      "name": "Vindhya Institute of Technology",
+      "city": "Jabalpur (demo)",
+      "location": {
+        "lat": 23.1815,
+        "lon": 79.9864,
+        "city": "Jabalpur (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "vindhya.html",
+      "departments": {
+        "Computer Science and Engineering": 9,
+        "Mechanical Engineering": 8,
+        "Electrical Engineering": 7,
+        "Applied Sciences and Humanities": 5
+      },
+      "intake": {
+        "Computer Science and Engineering": 120,
+        "Mechanical Engineering": 120,
+        "Electrical Engineering": 120
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-06001",
+          "name": "Dr. Waheeda Pillai",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06002",
+          "name": "Dr. Charu Oberoi",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06003",
+          "name": "Dr. Nandini Fernandes",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06004",
+          "name": "Dr. Harini Wadia",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06005",
+          "name": "Mr. Indira Yadav",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06006",
+          "name": "Ms. Indira Thakur",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06007",
+          "name": "Mr. Jatin Hegde",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06008",
+          "name": "Ms. Rohan Bhatt",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06009",
+          "name": "Ms. Varun Gill",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06010",
+          "name": "Dr. Sanya Thakur",
+          "department": "Mechanical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06011",
+          "name": "Dr. Gita Saxena",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06012",
+          "name": "Dr. Manav Menon",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06013",
+          "name": "Dr. Hemant Oberoi",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06014",
+          "name": "Prof. Harini Deshmukh",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-06015",
+          "name": "Ms. Bhavna Thakur",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06016",
+          "name": "Dr. Tarun Edathil",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06017",
+          "name": "Dr. Jaya Yadav",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06018",
+          "name": "Dr. Indira Kulkarni",
+          "department": "Electrical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06019",
+          "name": "Dr. Naveen Rao",
+          "department": "Electrical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06020",
+          "name": "Dr. Waheeda Menon",
+          "department": "Electrical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06021",
+          "name": "Ms. Pallavi Saxena",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06022",
+          "name": "Ms. Harini Ghosh",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06023",
+          "name": "Prof. Esha Banerjee",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06024",
+          "name": "Dr. Bharat Nair",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06025",
+          "name": "Dr. Tarun Kulkarni",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06026",
+          "name": "Dr. Varun Kapoor",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06027",
+          "name": "Dr. Omkar Menon",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-06028",
+          "name": "Ms. Ishaan Wadia",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-06029",
+          "name": "Ms. Bharat Bhatt",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0007",
+      "name": "Chenab Valley College of Technology",
+      "city": "Jammu (demo)",
+      "location": {
+        "lat": 32.7266,
+        "lon": 74.857,
+        "city": "Jammu (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "chenab.html",
+      "departments": {
+        "Computer Science and Engineering": 12,
+        "Civil Engineering": 6,
+        "Electronics and Communication Engineering": 7,
+        "Applied Sciences and Humanities": 5
+      },
+      "intake": {
+        "Computer Science and Engineering": 180,
+        "Civil Engineering": 90,
+        "Electronics and Communication Engineering": 120
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-07001",
+          "name": "Dr. Meera Qureshi",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07002",
+          "name": "Dr. Sanya Rao",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07003",
+          "name": "Dr. Rohan Banerjee",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07004",
+          "name": "Dr. Dhruv Menon",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07005",
+          "name": "Prof. Ishaan Oberoi",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07006",
+          "name": "Ms. Dhruv Hegde",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07007",
+          "name": "Prof. Tarun Kapoor",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-07008",
+          "name": "Prof. Arjun Menon",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07009",
+          "name": "Ms. Tarun Iyer",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-07010",
+          "name": "Dr. Sanya Wadia",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07011",
+          "name": "Prof. Kavya Acharya",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-07012",
+          "name": "Mr. Deepa Chandran",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07013",
+          "name": "Dr. Firoz Menon",
+          "department": "Civil Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07014",
+          "name": "Dr. Zoya Varma",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07015",
+          "name": "Mr. Deepa Saxena",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07016",
+          "name": "Ms. Zoya Rao",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07017",
+          "name": "Ms. Chirag Hegde",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07018",
+          "name": "Dr. Sanya Fernandes",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07019",
+          "name": "Dr. Harini Saxena",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07020",
+          "name": "Dr. Ananya Zaveri",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07021",
+          "name": "Dr. Eshan Zaveri",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07022",
+          "name": "Mr. Lakshmi Iyer",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07023",
+          "name": "Prof. Jaya Kapoor",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07024",
+          "name": "Dr. Chirag Banerjee",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07025",
+          "name": "Prof. Ananya Acharya",
+          "department": "Electronics and Communication Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07026",
+          "name": "Dr. Gaurav Banerjee",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07027",
+          "name": "Dr. Charu Nair",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07028",
+          "name": "Ms. Harini Chandran",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07029",
+          "name": "Mr. Firoz Yadav",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-07030",
+          "name": "Dr. Waheeda Gill",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0008",
+      "name": "Nilgiri College of Engineering and Technology",
+      "city": "Coimbatore (demo)",
+      "location": {
+        "lat": 11.0168,
+        "lon": 76.9558,
+        "city": "Coimbatore (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "nilgiri.html",
+      "departments": {
+        "Computer Science and Engineering": 10,
+        "Mechanical Engineering": 9,
+        "Information Technology": 6,
+        "Applied Sciences and Humanities": 6
+      },
+      "intake": {
+        "Computer Science and Engineering": 150,
+        "Mechanical Engineering": 120,
+        "Information Technology": 90
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-08001",
+          "name": "Dr. Firoz Lal",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08002",
+          "name": "Dr. Harini Lal",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08003",
+          "name": "Dr. Deepa Rao",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08004",
+          "name": "Dr. Waheeda Fernandes",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08005",
+          "name": "Prof. Indira Nair",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08006",
+          "name": "Ms. Charu Dutta",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08007",
+          "name": "Prof. Eshan Wadia",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-08008",
+          "name": "Prof. Pallavi Edathil",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-08009",
+          "name": "Mr. Chirag Yadav",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08010",
+          "name": "Mr. Charu Banerjee",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-08011",
+          "name": "Dr. Ishaan Lal",
+          "department": "Mechanical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08012",
+          "name": "Dr. Deepa Oberoi",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08013",
+          "name": "Dr. Ananya Iyer",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08014",
+          "name": "Mr. Firoz Dutta",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-08015",
+          "name": "Ms. Bharat Deshmukh",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08016",
+          "name": "Mr. Gita Rao",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08017",
+          "name": "Mr. Lalit Dutta",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08018",
+          "name": "Dr. Chirag Acharya",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08019",
+          "name": "Mr. Gita Oberoi",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08020",
+          "name": "Dr. Meera Thakur",
+          "department": "Information Technology",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08021",
+          "name": "Dr. Meera Banerjee",
+          "department": "Information Technology",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08022",
+          "name": "Ms. Yash Joshi",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08023",
+          "name": "Mr. Kabir Lal",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08024",
+          "name": "Prof. Arjun Acharya",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08025",
+          "name": "Mr. Naveen Gill",
+          "department": "Information Technology",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08026",
+          "name": "Dr. Farah Edathil",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08027",
+          "name": "Dr. Manav Hegde",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08028",
+          "name": "Dr. Dhruv Chandran",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08029",
+          "name": "Dr. Lalit Varma",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08030",
+          "name": "Mr. Ananya Chandran",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-08031",
+          "name": "Ms. Gita Kapoor",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0009",
+      "name": "Harita Institute of Science and Technology",
+      "city": "Guntur (demo)",
+      "location": {
+        "lat": 16.3067,
+        "lon": 80.4365,
+        "city": "Guntur (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "harita.html",
+      "departments": {
+        "Computer Science and Engineering": 8,
+        "Civil Engineering": 6,
+        "Electrical Engineering": 6,
+        "Applied Sciences and Humanities": 5
+      },
+      "intake": {
+        "Computer Science and Engineering": 120,
+        "Civil Engineering": 90,
+        "Electrical Engineering": 90
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-09001",
+          "name": "Dr. Waheeda Nair",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09002",
+          "name": "Dr. Jaya Oberoi",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09003",
+          "name": "Dr. Varun Lal",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09004",
+          "name": "Prof. Charu Qureshi",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09005",
+          "name": "Ms. Aditi Hegde",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09006",
+          "name": "Mr. Uma Ghosh",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-09007",
+          "name": "Mr. Zoya Zaveri",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09008",
+          "name": "Dr. Lalit Ghosh",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09009",
+          "name": "Dr. Deepa Thakur",
+          "department": "Civil Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09010",
+          "name": "Dr. Farah Kapoor",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09011",
+          "name": "Prof. Manav Iyer",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09012",
+          "name": "Mr. Lakshmi Wadia",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09013",
+          "name": "Ms. Harini Gill",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09014",
+          "name": "Dr. Naveen Iyer",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09015",
+          "name": "Dr. Jatin Gill",
+          "department": "Electrical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09016",
+          "name": "Dr. Aditi Saxena",
+          "department": "Electrical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09017",
+          "name": "Mr. Nandini Pillai",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09018",
+          "name": "Mr. Indira Lal",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09019",
+          "name": "Prof. Tarun Yadav",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09020",
+          "name": "Dr. Aditi Kulkarni",
+          "department": "Electrical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09021",
+          "name": "Dr. Meera Bhatt",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09022",
+          "name": "Dr. Esha Menon",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09023",
+          "name": "Dr. Nandini Zaveri",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09024",
+          "name": "Prof. Ananya Dutta",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-09025",
+          "name": "Mr. Kavya Chatterjee",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0010",
+      "name": "Brahmaputra College of Engineering",
+      "city": "Guwahati (demo)",
+      "location": {
+        "lat": 26.1445,
+        "lon": 91.7362,
+        "city": "Guwahati (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "brahmaputra.html",
+      "departments": {
+        "Computer Science and Engineering": 9,
+        "Civil Engineering": 7,
+        "Mechanical Engineering": 7,
+        "Applied Sciences and Humanities": 5
+      },
+      "intake": {
+        "Computer Science and Engineering": 120,
+        "Civil Engineering": 120,
+        "Mechanical Engineering": 120
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-10001",
+          "name": "Dr. Sanya Lal",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10002",
+          "name": "Dr. Bhavna Kulkarni",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10003",
+          "name": "Dr. Varun Rao",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10004",
+          "name": "Mr. Firoz Banerjee",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-10005",
+          "name": "Mr. Sanya Iyer",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10006",
+          "name": "Ms. Farah Iyer",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10007",
+          "name": "Dr. Gita Wadia",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10008",
+          "name": "Mr. Lakshmi Yadav",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10009",
+          "name": "Ms. Eshan Yadav",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10010",
+          "name": "Dr. Indira Pillai",
+          "department": "Civil Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10011",
+          "name": "Dr. Farah Qureshi",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10012",
+          "name": "Dr. Lakshmi Acharya",
+          "department": "Civil Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10013",
+          "name": "Dr. Bhavna Dutta",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10014",
+          "name": "Ms. Uma Nair",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10015",
+          "name": "Mr. Hemant Deshmukh",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10016",
+          "name": "Ms. Yash Edathil",
+          "department": "Civil Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10017",
+          "name": "Dr. Bhavna Upadhyay",
+          "department": "Mechanical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10018",
+          "name": "Dr. Jaya Qureshi",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10019",
+          "name": "Dr. Aditi Chandran",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10020",
+          "name": "Ms. Jatin Lal",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-10021",
+          "name": "Ms. Indira Wadia",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10022",
+          "name": "Ms. Pallavi Kapoor",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10023",
+          "name": "Ms. Rohan Kapoor",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10024",
+          "name": "Dr. Omkar Hegde",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10025",
+          "name": "Dr. Harini Iyer",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10026",
+          "name": "Dr. Indira Gill",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10027",
+          "name": "Mr. Uma Upadhyay",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-10028",
+          "name": "Ms. Ishaan Banerjee",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        }
+      ]
+    },
+    {
+      "aicte_id": "AICTE-DEMO-0011",
+      "name": "Saraswati Institute of Technology and Management",
+      "city": "Nashik (demo)",
+      "location": {
+        "lat": 19.9975,
+        "lon": 73.7898,
+        "city": "Nashik (demo)"
+      },
+      "captured_on": "2026-09-15",
+      "website_snapshot": "saraswati.html",
+      "departments": {
+        "Computer Science and Engineering": 8,
+        "Mechanical Engineering": 6,
+        "Applied Sciences and Humanities": 4
+      },
+      "intake": {
+        "Computer Science and Engineering": 120,
+        "Mechanical Engineering": 90
+      },
+      "faculty": [
+        {
+          "faculty_id": "FAC-DEMO-11001",
+          "name": "Dr. Indira Deshmukh",
+          "department": "Computer Science and Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11002",
+          "name": "Dr. Meera Zaveri",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11003",
+          "name": "Dr. Deepa Nair",
+          "department": "Computer Science and Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11004",
+          "name": "Prof. Aditi Edathil",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11005",
+          "name": "Mr. Naveen Nair",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11006",
+          "name": "Dr. Aditi Nair",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11007",
+          "name": "Prof. Naveen Joshi",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11008",
+          "name": "Prof. Varun Banerjee",
+          "department": "Computer Science and Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11009",
+          "name": "Dr. Naveen Pillai",
+          "department": "Mechanical Engineering",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11010",
+          "name": "Dr. Arjun Banerjee",
+          "department": "Mechanical Engineering",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11011",
+          "name": "Mr. Jatin Nair",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11012",
+          "name": "Mr. Zoya Nair",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Tech"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11013",
+          "name": "Ms. Nandini Joshi",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.E."
+        },
+        {
+          "faculty_id": "FAC-DEMO-11014",
+          "name": "Ms. Meera Saxena",
+          "department": "Mechanical Engineering",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11015",
+          "name": "Dr. Uma Thakur",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11016",
+          "name": "Dr. Rohan Dutta",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Associate Professor",
+          "qualification": "PhD"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11017",
+          "name": "Prof. Deepa Upadhyay",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "M.Sc"
+        },
+        {
+          "faculty_id": "FAC-DEMO-11018",
+          "name": "Dr. Omkar Rao",
+          "department": "Applied Sciences and Humanities",
+          "designation": "Assistant Professor",
+          "qualification": "PhD"
+        }
+      ]
+    }
+  ]
+}

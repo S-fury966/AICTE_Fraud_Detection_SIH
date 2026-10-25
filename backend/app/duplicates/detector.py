@@ -112,7 +112,11 @@ def detect_duplicates(
     )
     result = DuplicateCheckResult(document_id=document_id, status=DuplicateStatus.OK)
 
-    others = _other_documents(session, document_id)
+    others = _other_documents(
+        session,
+        document_id,
+        exclude_types=[str(t) for t in (get(cfg, "scope.exclude_document_types", []) or [])],
+    )
     compare_kind = str(get(cfg, "perceptual_hash.compare_kind", "dhash"))
     hash_size = int(get(cfg, "perceptual_hash.hash_size", 16))
     max_distance = int(get(cfg, "perceptual_hash.near_duplicate_max_distance", 12))
@@ -238,20 +242,25 @@ class _Other:
     file_sha256: str
 
 
-def _other_documents(session: Session, document_id: int) -> list[_Other]:
+def _other_documents(
+    session: Session, document_id: int, exclude_types: list[str] | None = None
+) -> list[_Other]:
     """Every document in the corpus except this one.
 
     The exclusion is by document id, which is what makes a re-run safe: a
     second run over the same document finds the same corpus and still cannot
-    see itself in it.
+    see itself in it. Types in `scope.exclude_document_types` (photographs,
+    faculty lists) are never part of this corpus.
     """
-    rows = session.execute(
+    query = (
         select(Document, Application, Institution)
         .join(Application, Document.application_id == Application.id)
         .join(Institution, Application.institution_id == Institution.id)
         .where(Document.id != document_id)
-        .order_by(Document.id)
-    ).all()
+    )
+    if exclude_types:
+        query = query.where(Document.document_type.not_in(exclude_types))
+    rows = session.execute(query.order_by(Document.id)).all()
     return [
         _Other(
             document_id=document.id,

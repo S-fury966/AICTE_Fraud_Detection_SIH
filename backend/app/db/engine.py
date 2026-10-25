@@ -26,7 +26,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from ..core.config import get, load_config
 from .models import Base, SchemaVersion
 
-SCHEMA_VERSION = "schema-v1"
+# v2: faculty_members, detector_details, risk_assessments, documents.claim,
+# and the faculty/photo config versions on check_runs.
+# v3: application_checks; findings.run_id nullable + findings.application_check_id.
+SCHEMA_VERSION = "schema-v3"
 
 _AUDIT_TRIGGERS = {
     "audit_log_no_update": """

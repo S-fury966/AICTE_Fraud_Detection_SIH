@@ -1,0 +1,23 @@
+# Plain-language explanations of an application's findings.
+#
+# The explanation DESCRIBES what the detectors found; it never adds a
+# conclusion of its own. A deterministic template always produces one. An LLM
+# may rewrite it for readability when enabled, and its text is then checked:
+# anything containing a banned term, or any number not present in the
+# template, is discarded and the template is shown instead.
+config_version: explanations-v1
+
+llm:
+  # Off by default: the template is complete on its own, and a demo must not
+  # depend on a rate-limited call. Provider settings come from
+  # config/certificate_extraction.yaml.
+  enabled: false
+  provider: groq
+
+language:
+  # Never appear in any user-facing output (CLAUDE.md, language rules).
+  banned_terms: ["fake", "forged", "forgery", "fraudulent", "deepfake", "counterfeit", "fabricated", "guilty", "cheat"]
+  disclaimer: >-
+    These are preliminary indicators for a reviewer, not findings of fact.
+    The risk level only orders the review queue; every decision rests with an
+    official.

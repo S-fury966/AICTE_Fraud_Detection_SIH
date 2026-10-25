@@ -1,0 +1,78 @@
+# Risk scoring (detector 4).
+#
+# The risk level PRIORITISES REVIEW ORDER ONLY. It approves nothing, rejects
+# nothing and states nothing about the institution. It decides which
+# application a reviewer opens first.
+#
+# Deterministic: same findings + same config = same score, and every score is
+# stored with this config's version and hash.
+config_version: risk-scoring-v2
+
+points:
+  # Base points per finding, by the strength its detector assigned.
+  strength:
+    strong: 40
+    medium: 15
+    weak: 4
+  # Per-type overrides, where a type's evidential value differs from its
+  # strength bucket. Missing EXIF is weak AND nearly worthless on its own.
+  type_overrides:
+    photo_exif_missing: 1
+    faculty_source_stale: 2
+    qr_not_found: 1
+    # Measured in step 6: a template sibling and a re-saved copy are
+    # indistinguishable by page image, so on a corpus where one issuer's
+    # template is shared this fires against nearly every certificate. The
+    # number checks are what decide; this is context.
+    near_duplicate_page_image: 2
+    # A source WE could not reach says nothing about the institution. Kept as
+    # a visible finding (a gap in the evidence must show), worth zero points.
+    faculty_source_unavailable: 0
+    issuer_source_unavailable: 0
+    issuer_lookup_lower_trust: 2
+  # Multiplier by the confidence a detector reported. Findings without a
+  # confidence count at 1.0.
+  confidence_multiplier:
+    high: 1.0
+    medium: 0.8
+    low: 0.5
+  # Each further finding of the SAME type in one application contributes this
+  # fraction of the previous one. Ten missing-EXIF photos are one observation
+  # repeated, not ten independent signals.
+  repeat_decay: 0.5
+
+# NEUTRAL BY RULE (see CLAUDE.md, "Scoring rules that follow from step 6"): a
+# clean signature, an absent signature, a verified issuer lookup and the
+# absence of findings contribute ZERO. Nothing in this file can lower a score.
+# Listed here so the rule is visible where the weights are.
+never_reduces_risk:
+  - present_and_byte_range_intact
+  - signature_absent
+  - verified
+
+review:
+  # A finding a human dismissed no longer counts. A confirmed one counts at
+  # this multiplier. The original finding is never deleted.
+  exclude_statuses: [dismissed]
+  confirmed_multiplier: 1.25
+
+detectors:
+  # Sub-score per detector: points summed and capped at `cap`. The combined
+  # score is the weighted sum of sub-scores, capped at 100.
+  certificate_authenticity: {weight: 1.0, label: "Certificate authenticity"}
+  duplicate_detection: {weight: 1.0, label: "Cross-application duplicates"}
+  faculty_consistency: {weight: 0.9, label: "Faculty count consistency"}
+  photo_authenticity: {weight: 0.8, label: "Photo authenticity"}
+  application_validation: {weight: 1.0, label: "Application validation"}
+  regulatory_compliance: {weight: 0.7, label: "Regulatory compliance"}
+  cap: 100
+
+levels:
+  # Combined score at or above these thresholds.
+  medium: 15
+  high: 40
+  # Floors: any open strong finding puts the application at least here, so a
+  # single serious indicator is never averaged away.
+  floor_for_strong: medium
+  # Two or more strong findings from DIFFERENT detectors.
+  floor_for_corroborated_strong: high

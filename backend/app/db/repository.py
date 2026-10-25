@@ -15,17 +15,20 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..core.config import get, load_config
 from . import audit_log
 from .models import (
     Application,
+    ApplicationCheck,
     AuditLog,
     CheckRun,
     CrossReference,
+    DetectorDetail,
     Document,
+    FacultyMemberRow,
     ExtractedField,
     FindingRow,
     Institution,
@@ -122,6 +125,7 @@ def create_document(
     role: str,
     newly_stored: bool = True,
     config: dict[str, Any] | None = None,
+    claim: str | None = None,
 ) -> Document:
     validate_actor(actor)
     validate_role(role, config)
@@ -135,6 +139,7 @@ def create_document(
         size_bytes=size_bytes,
         uploaded_by=actor,
         uploaded_role=role,
+        claim=claim,
     )
     session.add(document)
     session.flush()
@@ -189,6 +194,8 @@ def start_check_run(
         persistence_config_version=versions.get("persistence"),
         signature_config_version=versions.get("signature_checks"),
         duplicate_config_version=versions.get("duplicate_checks"),
+        faculty_config_version=versions.get("faculty_checks"),
+        photo_config_version=versions.get("photo_checks"),
         config_hashes=config_hashes,
     )
     session.add(run)
@@ -434,14 +441,21 @@ def save_verification_lookups(
 
 def save_findings(
     session: Session,
-    run_id: int,
+    run_id: int | None,
     detector: str,
     findings: list[dict[str, Any]],
     actor: str,
     role: str,
     config: dict[str, Any] | None = None,
+    application_check_id: int | None = None,
 ) -> list[FindingRow]:
-    """Write findings from any detector into the one findings table."""
+    """Write findings from any detector into the one findings table.
+
+    Exactly one of `run_id` (a document's run) or `application_check_id` (an
+    application-level pass) owns them.
+    """
+    if (run_id is None) == (application_check_id is None):
+        raise ValueError("a finding belongs to exactly one of a run or an application check")
     validate_actor(actor)
     validate_role(role, config)
 
@@ -450,6 +464,7 @@ def save_findings(
         rows.append(
             FindingRow(
                 run_id=run_id,
+                application_check_id=application_check_id,
                 detector=detector,
                 type=str(finding.get("type", "unknown")),
                 strength=str(finding.get("strength", "weak")),
@@ -461,6 +476,12 @@ def save_findings(
         )
     session.add_all(rows)
     session.flush()
+    cfg = config if config is not None else load_config("persistence")
+    carried = (
+        _carry_forward_reviews(session, rows, run_id, application_check_id, detector, actor, role)
+        if bool(get(cfg, "review.carry_forward_on_rerun", False))
+        else {}
+    )
 
     if rows:
         audit_log.append(
@@ -468,17 +489,79 @@ def save_findings(
             actor=actor,
             role=role,
             action="findings_created",
-            entity_type="check_run",
-            entity_id=run_id,
+            entity_type="check_run" if run_id is not None else "application_check",
+            entity_id=run_id if run_id is not None else application_check_id,
             details={
                 "detector": detector,
                 "count": len(rows),
                 # Ids and types only: the evidence stays in the findings table.
                 "finding_ids": [row.id for row in rows],
                 "types": [row.type for row in rows],
+                **({"reviews_carried_from": carried} if carried else {}),
             },
         )
     return rows
+
+
+def _carry_forward_reviews(
+    session: Session,
+    rows: list[FindingRow],
+    run_id: int | None,
+    application_check_id: int | None,
+    detector: str,
+    actor: str,
+    role: str,
+) -> dict[str, int]:
+    """Give each new finding the review status of an identical one in the
+    previous run of the same document (or previous check of the application).
+
+    Identical means same detector, type and reason; the reason quotes the
+    values compared, so a changed fact is a different finding and stays open.
+    Returns {new finding id: earlier finding id}.
+    """
+    if run_id is not None:
+        run = session.get(CheckRun, run_id)
+        previous_owner = session.scalars(
+            select(CheckRun.id)
+            .where(CheckRun.document_id == run.document_id, CheckRun.id < run_id)
+            .order_by(CheckRun.id.desc())
+            .limit(1)
+        ).first()
+        owner_column = FindingRow.run_id
+    else:
+        check = session.get(ApplicationCheck, application_check_id)
+        previous_owner = session.scalars(
+            select(ApplicationCheck.id)
+            .where(ApplicationCheck.application_id == check.application_id, ApplicationCheck.id < application_check_id)
+            .order_by(ApplicationCheck.id.desc())
+            .limit(1)
+        ).first()
+        owner_column = FindingRow.application_check_id
+    if previous_owner is None:
+        return {}
+    pool: dict[tuple[str, str], list[FindingRow]] = {}
+    for earlier in session.scalars(
+        select(FindingRow)
+        .where(owner_column == previous_owner, FindingRow.detector == detector, FindingRow.review_status != "open")
+        .order_by(FindingRow.id)
+    ).all():
+        pool.setdefault((earlier.type, earlier.reason), []).append(earlier)
+    carried: dict[str, int] = {}
+    for row in rows:
+        matches = pool.get((row.type, row.reason))
+        if not matches:
+            continue
+        earlier = matches.pop(0)
+        row.review_status = earlier.review_status
+        session.add(
+            ReviewAction(
+                finding_id=row.id, actor=actor, role=role, action="carried_forward",
+                note=f"Review status '{earlier.review_status}' carried from finding #{earlier.id}, identical in the previous run.",
+            )
+        )
+        carried[str(row.id)] = earlier.id
+    session.flush()
+    return carried
 
 
 # --------------------------------------------------------------------------
@@ -566,6 +649,7 @@ def _document_dict(document: Document) -> dict[str, Any]:
         "size_bytes": document.size_bytes,
         "uploaded_by": document.uploaded_by,
         "uploaded_role": document.uploaded_role,
+        "claim": document.claim,
         "created_at": _iso(document.created_at),
     }
 
@@ -590,6 +674,8 @@ def _run_dict(session: Session, run: CheckRun) -> dict[str, Any]:
             "persistence": run.persistence_config_version,
             "signature_checks": run.signature_config_version,
             "duplicate_checks": run.duplicate_config_version,
+            "faculty_checks": run.faculty_config_version,
+            "photo_checks": run.photo_config_version,
         },
         "config_hashes": run.config_hashes,
         "provider": run.provider,
@@ -700,6 +786,10 @@ def _run_dict(session: Session, run: CheckRun) -> dict[str, Any]:
             }
             for row in sorted(run.perceptual_hashes, key=lambda h: h.id)
         ],
+        "details": {
+            row.kind: row.payload
+            for row in sorted(run.detector_details, key=lambda d: d.id)
+        },
         "raw_llm_response_count": len(run.raw_llm_responses),
         "findings": [_finding_dict(finding) for finding in findings],
     }
@@ -775,12 +865,31 @@ def get_application_report(
         )
         session.commit()
 
+    check = session.scalars(
+        select(ApplicationCheck)
+        .where(ApplicationCheck.application_id == application_id)
+        .order_by(ApplicationCheck.id.desc())
+        .limit(1)
+    ).first()
+    application_check = None
+    if check is not None:
+        application_check = {
+            "id": check.id,
+            "status": check.status,
+            "config_version": check.config_version,
+            "created_at": _iso(check.created_at),
+            "actor": check.actor,
+            **(check.payload or {}),
+            "findings": [_finding_dict(f) for f in sorted(check.findings, key=lambda f: f.id)],
+        }
+
     return {
         "application": {
             "id": application.id,
             "category": application.category,
             "created_at": _iso(application.created_at),
         },
+        "application_check": application_check,
         "institution": {
             "id": institution.id,
             "name": institution.name,
@@ -1004,3 +1113,74 @@ def cross_references_for_document(
     from ..duplicates.detector import cross_references_for_document as reader
 
     return reader(session, document_id)
+
+
+# --------------------------------------------------------------------------
+# Faculty and photo detectors
+# --------------------------------------------------------------------------
+
+
+def save_detector_detail(
+    session: Session, run_id: int, detector: str, kind: str, payload: dict[str, Any]
+) -> DetectorDetail:
+    row = DetectorDetail(run_id=run_id, detector=detector, kind=kind, payload=payload)
+    session.add(row)
+    session.flush()
+    return row
+
+
+def save_faculty_members(
+    session: Session,
+    document_id: int,
+    run_id: int,
+    institution_id: int,
+    people: list[dict[str, Any]],
+    normalise: Any,
+) -> list[FacultyMemberRow]:
+    rows = [
+        FacultyMemberRow(
+            document_id=document_id,
+            run_id=run_id,
+            institution_id=institution_id,
+            faculty_id=person.get("faculty_id"),
+            name=str(person.get("name", "")),
+            name_normalised=normalise(str(person.get("name", ""))),
+            department=person.get("department"),
+            designation=person.get("designation"),
+            qualification=person.get("qualification"),
+        )
+        for person in people
+    ]
+    session.add_all(rows)
+    session.flush()
+    return rows
+
+
+def faculty_declared_elsewhere(
+    session: Session, exclude_institution_id: int
+) -> list[dict[str, Any]]:
+    """Faculty rows declared by other institutions, from each document's newest run."""
+    latest = (
+        select(CheckRun.document_id, func.max(CheckRun.id).label("run_id"))
+        .group_by(CheckRun.document_id)
+        .subquery()
+    )
+    rows = session.execute(
+        select(FacultyMemberRow, Institution)
+        .join(latest, FacultyMemberRow.run_id == latest.c.run_id)
+        .join(Institution, FacultyMemberRow.institution_id == Institution.id)
+        .where(FacultyMemberRow.institution_id != exclude_institution_id)
+    ).all()
+    return [
+        {
+            "institution_id": member.institution_id,
+            "institution_name": institution.name,
+            "document_id": member.document_id,
+            "faculty_id": member.faculty_id,
+            "name": member.name,
+            "name_normalised": member.name_normalised,
+            "department": member.department,
+            "qualification": member.qualification,
+        }
+        for member, institution in rows
+    ]

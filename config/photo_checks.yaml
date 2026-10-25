@@ -1,0 +1,133 @@
+# Photo authenticity for lab and classroom photographs (detector 3).
+#
+# Checks are ordered by how much their signal is worth, and their strengths
+# follow that order: reuse > EXIF > manipulation > synthetic-content hint >
+# claim-vs-image consistency. No check here ever says an image is "fake"; the
+# strongest thing any of them says is that something needs a person to look.
+#
+# Bump `config_version` whenever a value changes: it is stamped onto every run.
+config_version: photo-checks-v1
+
+reuse:
+  enabled: true
+  # Perceptual hashing against OUR OWN corpus of previously submitted photos.
+  # No external reverse-image service is called (a confirmed decision).
+  #
+  # phash here, unlike the certificate pages: a photograph has rich
+  # low-frequency structure, which is exactly what phash keeps, while a sparse
+  # text page has almost none. Both kinds are stored either way.
+  kinds: [phash, dhash]
+  compare_kind: phash
+  hash_size: 16
+  # Measured on the demo renders (phash, 256 bits; python -m demo.measure):
+  #   same photo re-encoded JPEG q60             2
+  #   same photo resized x0.5                    2
+  #   mirrored + shrunk x0.8 + JPEG q78, compared
+  #     against the mirrored hash                4   (direct: 128)
+  #   same photo cropped 5% each side          104   <- NOT caught
+  #   different synthetic rooms             66-160   (median 118)
+  # 24 catches re-encodes, rescales and flips with a wide margin below the
+  # closest unrelated pair. A crop defeats a whole-image hash; catching it
+  # would need region matching, which this prototype does not do.
+  near_duplicate_max_distance: 24
+  # Also compare the horizontally mirrored image: flipping a photo is the
+  # cheapest way to make a reused one look different.
+  check_mirrored: true
+  strength:
+    other_institution: strong
+    # The same photo submitted twice by one institution, as two different
+    # rooms. Worth a look, not an accusation.
+    same_institution: medium
+  # Photographs only; certificate pages are compared by the duplicate
+  # detector with its own thresholds.
+  page_marker: 0
+
+exif:
+  enabled: true
+  # Missing EXIF is a weak signal ONLY. Messaging apps, screenshots and many
+  # upload tools strip it routinely.
+  missing_exif_strength: weak
+  capture_date:
+    # A capture date after the upload, or in the future, cannot be honest.
+    after_upload_strength: medium
+    # A photo this much older than the application may not show the current
+    # state of the room.
+    max_age_days: 1095
+    too_old_strength: weak
+  gps:
+    # Distance from the institution's recorded location (mock AICTE records).
+    max_distance_km: 5.0
+    far_strength: medium
+    # Beyond this it is not plausibly the campus at all.
+    very_far_km: 100.0
+    very_far_strength: strong
+  editing_software:
+    # Substrings matched case-insensitively against EXIF Software /
+    # ProcessingSoftware / XMP CreatorTool. Resizing tools are deliberately
+    # absent: re-saving is not editing.
+    markers: ["photoshop", "gimp", "lightroom", "affinity photo", "pixelmator", "snapseed", "picsart", "facetune", "photopea", "canva"]
+    strength: weak
+
+manipulation:
+  enabled: true
+  ela:
+    # Error level analysis: re-save at a known JPEG quality and look at where
+    # the image changes most. A pasted region often re-compresses differently.
+    # JPEG only - ELA on a lossless image measures nothing.
+    jpeg_quality: 90
+    block_size: 16
+    # Ratio of the 99.5th-percentile block error to the median block error,
+    # and the count of blocks above (ratio x median). Measured on demo renders:
+    #   untouched rooms (20)        ratio <= 6.5, hot blocks <= 6
+    #   pristine patch pasted (3)   ratio ~9.7,   hot blocks 81-91
+    suspicious_ratio: 8.0
+    min_suspicious_blocks: 20
+    strength: weak
+    # Saved as an evidence image for the reviewer.
+    save_heatmap: true
+  copy_move:
+    # A region cloned within the same image (covering an empty bench with a
+    # copy of an occupied one). ORB keypoints matched against themselves.
+    max_features: 3000
+    ratio_test: 0.75
+    # Matched points closer than this are the same spot, not a copy.
+    min_offset_px: 40
+    # Matches with near-identical displacement are grouped; a group this
+    # large is reported. Measured on demo renders: untouched rooms 18-55
+    # (rows of identical desks ARE repetitive), cloned region 163-291.
+    displacement_bin_px: 6
+    min_cluster_matches: 100
+    strength: medium
+    max_dimension: 1600
+
+synthetic_content:
+  enabled: true
+  # LOW-CONFIDENCE HINT ONLY. Never "deepfake detected". Output wording is
+  # fixed: "possible synthetic content, manual verification needed".
+  #
+  # Generator markers in metadata: EXIF Software, PNG text chunks, XMP. A
+  # marker is a statement the file makes about itself, which is why this is
+  # the only part of the check enabled by default.
+  metadata_markers: ["stable diffusion", "midjourney", "dall-e", "dall·e", "dalle", "firefly", "imagen", "novelai", "comfyui", "automatic1111", "sdxl", "flux", "trainedalgorithmicmedia", "made with ai", "ai generated", "generative fill"]
+  metadata_marker_strength: medium
+  # A frequency-spectrum heuristic exists in code but is OFF: it has not been
+  # validated on real photographs, and the demo's own "real" photos are
+  # synthetic renderings, so any number it produced here would be meaningless.
+  spectral_heuristic:
+    enabled: false
+    threshold: 0.35
+    strength: weak
+
+claim_consistency:
+  # Claim vs image ("30 computers") via a vision-language model. ADVISORY:
+  # never above weak, always low confidence. With no VLM configured the check
+  # is recorded as source_unavailable - it does not guess.
+  enabled: true
+  vlm_provider: null
+  strength: weak
+
+document_types:
+  # Which uploaded document types are routed through this detector.
+  - lab_photo
+  - classroom_photo
+  - infrastructure_photo

@@ -1,0 +1,79 @@
+# Application validation and regulatory compliance (application-level checks).
+#
+# These look at an application as a whole, after every document has run:
+# is the application complete, does the certificate name the institution that
+# is applying, and do the declared faculty meet the configured norms.
+#
+# THE NORMS BELOW ARE MOCK VALUES for the prototype. They are shaped like the
+# kind of rule an approval handbook sets (a student:faculty ratio, a cadre
+# ratio, qualification requirements), but they are NOT taken from any real
+# AICTE handbook and must be replaced by an official's configuration before
+# any real use. Every result says "against configured norms".
+#
+# As everywhere else: an unmet norm is an indicator for a reviewer, never a
+# decision. Bump `config_version` whenever a value changes.
+config_version: compliance-checks-v1
+
+completeness:
+  enabled: true
+  # Documents an application of this category must carry. `any_of` is
+  # satisfied by any listed type; `min_count` by that many documents.
+  required:
+    extension_of_approval:
+      - {label: "Accreditation certificate", any_of: [accreditation_certificate], min_count: 1}
+      - {label: "Faculty list", any_of: [faculty_declaration], min_count: 1}
+      - {label: "Laboratory photograph", any_of: [lab_photo], min_count: 1}
+  # Missing documents are a gap in the application, not an indicator about the
+  # institution's honesty: medium, so it is seen early, never strong.
+  missing_strength: medium
+
+applicant_identity:
+  enabled: true
+  # The certificate's validated institution name is compared with the name on
+  # the application. Below this similarity (after normalisation and the
+  # abbreviations below), the certificate may belong to someone else.
+  min_name_similarity: 0.85
+  strength: strong
+  abbreviations:
+    inst: institute
+    engg: engineering
+    eng: engineering
+    tech: technology
+    coll: college
+    univ: university
+    mgmt: management
+    sci: science
+
+session:
+  enabled: true
+  # The academic session applied for. The accreditation must be valid across
+  # all of it; a certificate lapsing mid-session is flagged.
+  label: "2026-27"
+  start: "2026-07-01"
+  end: "2027-06-30"
+  strength: medium
+
+norms:
+  enabled: true
+  # MOCK: maximum students per faculty member, per department with an intake.
+  # Intake comes from the (mock) AICTE records.
+  max_student_faculty_ratio: 20
+  ratio_strength: medium
+  # Compliant on the declared count, not on the AICTE-recorded count: the
+  # pattern that makes inflation worth doing. Medium; the inflation itself is
+  # already reported by the faculty detector.
+  met_only_as_declared_strength: medium
+  # MOCK cadre ratio Professor : Associate : Assistant. Flagged when the share
+  # of a cadre falls below `min_fraction_of_norm` of its target share.
+  cadre_ratio: {professor: 1, associate_professor: 2, assistant_professor: 6}
+  min_fraction_of_norm: 0.5
+  cadre_strength: weak
+  # MOCK: designations that require a doctorate.
+  phd_required_for: [professor, associate_professor]
+  phd_markers: ["phd", "ph.d", "doctorate"]
+  qualification_strength: medium
+  # Designation spellings, normalised.
+  designation_aliases:
+    professor: ["professor", "prof"]
+    associate_professor: ["associate professor", "assoc professor", "assoc. professor"]
+    assistant_professor: ["assistant professor", "asst professor", "asst. professor"]

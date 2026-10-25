@@ -2,7 +2,7 @@
 #
 # Bump `config_version` whenever a value changes: it is stamped onto every
 # check run alongside the other detectors' config versions.
-config_version: duplicate-checks-v2
+config_version: duplicate-checks-v3
 
 checks:
   # Each can be turned off independently. All four are cheap; the switches
@@ -104,6 +104,17 @@ template_noise_suppression:
   # Suppressed findings are counted and listed in the result, so a run never
   # silently reports fewer findings than it observed.
   record_suppressions: true
+
+scope:
+  # Document types this detector never compares. Photographs have their own
+  # reuse check with thresholds measured on photographs, and a faculty list is
+  # not a page image; comparing either against certificate pages would only
+  # produce noise.
+  exclude_document_types:
+    - lab_photo
+    - classroom_photo
+    - infrastructure_photo
+    - faculty_declaration
 
 context:
   # A document is never a duplicate of its own earlier runs. Re-running the

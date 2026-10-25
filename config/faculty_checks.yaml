@@ -1,0 +1,108 @@
+# Faculty count consistency (detector 2).
+#
+# Three sources, compared per department:
+#   declared  - the faculty list the institution uploaded with its application
+#   website   - the institution's own published faculty page (a SYNTHETIC local
+#               HTML snapshot under data/demo/websites; nothing is ever fetched)
+#   aicte     - AICTE's own records (MOCK, data/demo/aicte_records.json)
+#
+# Bump `config_version` whenever a value changes: it is stamped onto every run.
+config_version: faculty-checks-v1
+
+sources:
+  # The mock AICTE records file, relative to the repository root.
+  aicte_records_path: data/demo/aicte_records.json
+  # Website snapshots are read from this directory ONLY. A record naming a
+  # file outside it is refused, so a record can never point the detector at an
+  # arbitrary path - the same rule as the issuer URL: the source of truth is
+  # configured, never supplied by the thing being checked.
+  website_snapshot_dir: data/demo/websites
+  # A source captured longer ago than this, relative to the evaluation date,
+  # is still compared but also flagged as stale. A count is a fact about a
+  # moment; an old one can disagree honestly.
+  max_source_age_days: 180
+  # Reference date for staleness. null means today (UTC). Pin for demos.
+  as_of: null
+
+institution_matching:
+  # How an application's institution is found in the AICTE records. Exact
+  # after normalisation first; then the closest name at or above this ratio.
+  # A fuzzy match is recorded in the evidence with its score, so a reviewer
+  # can see the records consulted were chosen by similarity.
+  min_name_similarity: 0.90
+
+declared_file:
+  # Columns read from the uploaded CSV. Header names are matched
+  # case-insensitively; extra columns are ignored.
+  columns:
+    faculty_id: ["faculty_id", "aicte_faculty_id", "id"]
+    name: ["name", "faculty_name"]
+    department: ["department", "dept"]
+    designation: ["designation"]
+    qualification: ["qualification", "highest_qualification"]
+
+departments:
+  # Department names differ between sources ("CSE" vs "Computer Science and
+  # Engineering"). Aliases map every spelling to one canonical name. A
+  # department no alias covers is compared under its own normalised name.
+  aliases:
+    Computer Science and Engineering: ["cse", "computer science", "computer science & engineering", "dept. of computer science and engineering"]
+    Electronics and Communication Engineering: ["ece", "electronics & communication engineering", "electronics and communication"]
+    Electrical Engineering: ["ee", "eee", "electrical and electronics engineering", "electrical"]
+    Mechanical Engineering: ["me", "mech", "mechanical"]
+    Civil Engineering: ["ce", "civil"]
+    Information Technology: ["it", "information tech"]
+    Applied Sciences and Humanities: ["ash", "applied sciences", "humanities and sciences", "basic sciences"]
+
+tolerance:
+  # Allowed deviation per department = max(absolute, ceil(relative x reference)).
+  # The reference is the AICTE count where one exists. Small departments get
+  # the absolute floor; large ones the percentage. A faculty member joining or
+  # leaving between capture dates must not read as a discrepancy.
+  absolute: 1
+  relative: 0.10
+
+strength:
+  # Declared above AICTE records, beyond tolerance. Inflation is the pattern
+  # this detector exists for. Strong when the excess is at least this fraction
+  # of the AICTE count, otherwise medium.
+  declared_exceeds_records_strong_ratio: 0.25
+  declared_exceeds_records: medium
+  # Declared BELOW records: under-declaring is not the concern, but the
+  # sources still disagree and a reviewer may want to know.
+  declared_below_records: weak
+  # The website is the institution's own publication and the least controlled
+  # source, so a disagreement with it is never strong on its own.
+  declared_vs_website: medium
+  # Total within tolerance but departments individually outside it in
+  # opposite directions: headcount moved between departments on paper.
+  redistribution: strong
+  # A department declared that the AICTE records do not list at all.
+  department_not_in_records: medium
+  stale_source: weak
+  source_unavailable: weak
+  # Identity checks.
+  shared_faculty_id: strong
+  shared_faculty_name_match: medium
+  # Declared people whose faculty id the AICTE roster for this institution
+  # does not contain. Weak up to the count below, medium above it.
+  not_in_roster: weak
+  not_in_roster_medium_count: 3
+
+identity:
+  # DECISION: a synthetic unique faculty id is the primary key. A match on the
+  # id across institutions is strong. Without an id match, a fuzzy match on
+  # normalised name AND an exact qualification is reported as medium - never
+  # strong, because two people can share a name and a degree.
+  match_on_id: true
+  match_on_name: true
+  min_name_similarity: 0.93
+  require_same_qualification: true
+  # Titles stripped before comparing names.
+  strip_titles: ["dr", "prof", "professor", "mr", "mrs", "ms", "shri", "smt", "er"]
+  # Compare against other institutions' AICTE rosters and against faculty
+  # lists declared in other applications already in the database.
+  compare_against_records: true
+  compare_against_declarations: true
+  # Cap per finding, so one shared roster cannot produce a thousand rows.
+  max_examples: 15

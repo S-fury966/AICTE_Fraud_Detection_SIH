@@ -79,3 +79,7 @@ cryptography==50.0.2
 # Perceptual hashing for duplicate detection, and for the photo detector later.
 # Brings scipy and PyWavelets (phash needs a DCT, whash a wavelet transform).
 imagehash==4.3.2
+
+# Step 8: the reviewer API. FastAPI needs this to parse multipart uploads.
+# Resolved on Python 3.12 / macOS here.
+python-multipart==0.0.32

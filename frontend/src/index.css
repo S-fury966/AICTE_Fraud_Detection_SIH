@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/*
+ * Authentiq design tokens.
+ *
+ * Calm neutrals carry the page; two accents carry meaning-free emphasis:
+ *   ink     near-black   active pills, dark panels, primary actions
+ *   butter  warm yellow  highlights, the "you are here" accent
+ *   iris    electric indigo  insight cards, links, focus
+ * Status colours (critical / serious / warning / good) are reserved for
+ * meaning and always travel with a text label.
+ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Neutral scale (replaces Tailwind's blue-tinted slate with a warmer grey). */
+  --color-slate-50: #f6f6f4;
+  --color-slate-100: #efefec;
+  --color-slate-200: #e3e3df;
+  --color-slate-300: #cfcfca;
+  --color-slate-400: #a3a39e;
+  --color-slate-500: #77776f;
+  --color-slate-600: #575751;
+  --color-slate-700: #3d3d39;
+  --color-slate-800: #282826;
+  --color-slate-900: #18181a;
+
+  --color-ink-900: #141416;
+  --color-ink-800: #1c1c1f;
+  --color-ink-700: #2a2a2e;
+  --color-ink-600: #3e3bf0;
+
+  --color-butter-500: #f5cf4c;
+  --color-butter-400: #f8dc7a;
+  --color-butter-100: #fdf4d3;
+  --color-saffron-500: #f5cf4c;
+  --color-saffron-100: #fdf4d3;
+
+  --color-iris-600: #3e3bf0;
+  --color-iris-500: #5552f6;
+  --color-iris-100: #e7e7fe;
+  --color-tangerine-500: #f28c38;
+
+  --color-critical: #e5484d;
+  --color-serious: #f28c38;
+  --color-warning: #f5b83d;
+  --color-good: #2f9e6e;
+  --color-series-1: #3e3bf0;
+
+  --radius-card: 1.75rem;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    margin: 0;
+    color: #18181a;
+    background-color: #ecebe8;
+    background-image:
+      radial-gradient(1200px 600px at 100% 110%, #f8e9b4 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% -10%, #e4e4f1 0%, transparent 55%),
+      linear-gradient(180deg, #eeeeec 0%, #f1efe7 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  h1, h2, .font-display {
+    font-family: var(--font-display);
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cfcfca; border-radius: 9999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::selection { background: #f8dc7a; }
+}
+
+@layer components {
+  .card {
+    @apply rounded-[1.75rem] bg-white/85 shadow-[0_1px_2px_rgba(20,20,22,0.04),0_12px_32px_-18px_rgba(20,20,22,0.18)] ring-1 ring-black/[0.04] backdrop-blur-sm;
+  }
+  .label-xs {
+    @apply text-[11px] font-medium uppercase tracking-[0.08em] text-slate-500;
+  }
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-iris-500 focus-visible:ring-offset-2;
+  }
+  /* The diagonal hatch from the references: "remaining" or "not yet". */
+  .hatch {
+    background-image: repeating-linear-gradient(135deg, rgba(20, 20, 22, 0.16) 0 1.5px, transparent 1.5px 7px);
+  }
+  .hatch-light {
+    background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0 1.5px, transparent 1.5px 7px);
+  }
+  .num {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Transform only: content is never invisible, even if the animation never runs. */
+@keyframes rise {
+  from { transform: translateY(8px); }
+  to { transform: none; }
+}
+.animate-rise { animation: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@keyframes sweep {
+  from { stroke-dashoffset: var(--sweep-from); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise { animation: none; }
+}

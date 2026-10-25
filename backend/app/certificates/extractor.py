@@ -71,6 +71,8 @@ def extract_certificate_fields(
     document_text = _assemble_document_text(page_text)
     rendered = prompt.render(DOCUMENT_TEXT=document_text)
 
+    configured_provider = provider is None
+    fallback_reason: str | None = None
     if provider is None:
         provider_name = str(get(cfg, "llm.provider", "groq"))
         settings = dict(get(cfg, f"llm.providers.{provider_name}", {}) or {})
@@ -79,17 +81,28 @@ def extract_certificate_fields(
         settings.setdefault("temperature", get(cfg, "llm.temperature", 0))
         try:
             provider = get_provider(provider_name, settings)
+            is_configured = getattr(provider, "is_configured", None)
+            if callable(is_configured) and not is_configured():
+                raise LLMUnavailableError(
+                    f"provider {provider_name!r} has no API key configured"
+                )
         except LLMUnavailableError as exc:
-            return _failed_result(
-                source_path,
-                cfg,
-                prompt.prompt_version,
-                document_text,
-                provider_name,
-                "unknown",
-                FieldExtractionStatus.PROVIDER_UNAVAILABLE,
-                str(exc),
-            )
+            # A configured offline fallback (the label reader) keeps a demo
+            # working without a key. Its output passes the same snippet guard,
+            # and the provider name it records says it was not the model.
+            provider = _fallback_provider(cfg, provider_name)
+            fallback_reason = str(exc)
+            if provider is None:
+                return _failed_result(
+                    source_path,
+                    cfg,
+                    prompt.prompt_version,
+                    document_text,
+                    provider_name,
+                    "unknown",
+                    FieldExtractionStatus.PROVIDER_UNAVAILABLE,
+                    str(exc),
+                )
 
     max_retries = int(get(cfg, "llm.max_retries", 1))
     raw_responses: list[str] = []
@@ -104,6 +117,18 @@ def extract_certificate_fields(
         try:
             completion = provider.complete(current_prompt)
         except LLMUnavailableError as exc:
+            # A provider can also turn out to be unavailable only when called
+            # (a quota of zero). Swap to the fallback once, for a configured
+            # provider only - an injected one is a test's explicit choice.
+            alternative = (
+                _fallback_provider(cfg, getattr(provider, "name", ""))
+                if configured_provider and fallback_reason is None
+                else None
+            )
+            if alternative is not None:
+                provider = alternative
+                fallback_reason = str(exc)
+                continue
             return _failed_result(
                 source_path,
                 cfg,
@@ -396,6 +421,18 @@ def _normalise_pages(
             number = int(getattr(page, "page_number", index))
             result[number] = getattr(page, "text", "") or ""
     return result
+
+
+def _fallback_provider(cfg: dict[str, Any], primary: str) -> LLMProvider | None:
+    """The configured offline fallback, or None when there is none."""
+    fallback = get(cfg, "llm.fallback_provider")
+    if not fallback or str(fallback) == primary:
+        return None
+    settings = dict(get(cfg, f"llm.providers.{fallback}", {}) or {})
+    try:
+        return get_provider(str(fallback), settings)
+    except LLMUnavailableError:
+        return None
 
 
 def _assemble_document_text(pages: dict[int, str]) -> str:

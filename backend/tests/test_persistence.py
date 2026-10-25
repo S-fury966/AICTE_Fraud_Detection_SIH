@@ -216,7 +216,7 @@ def stage(summary, name):
 
 
 def test_the_schema_is_created_with_a_version(database):
-    assert database.schema_version() == "schema-v1"
+    assert database.schema_version() == "schema-v3"
     tables = database.table_names()
 
     for expected in (
@@ -380,6 +380,9 @@ def test_the_run_records_the_config_versions_it_was_judged_under(
             "signature_checks",
             "duplicate_checks",
             "persistence",
+            # Added with the faculty and photo detectors.
+            "faculty_checks",
+            "photo_checks",
         }
         assert run.signature_config_version
         assert run.duplicate_config_version

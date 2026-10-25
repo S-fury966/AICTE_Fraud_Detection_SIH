@@ -1,0 +1,488 @@
+{
+  "dataset": "sih-2026-demo",
+  "seed": 20261025,
+  "as_of": "2026-10-20",
+  "note": "Synthetic. Every institution, person, certificate and photo is invented.",
+  "non_reproducible_documents": [
+    "applications/aravalli/certificate.pdf",
+    "applications/brahmaputra/certificate.pdf"
+  ],
+  "applications": [
+    {
+      "key": "shantiniketan",
+      "processing_order": 1,
+      "institution": "Shantiniketan Institute of Technology",
+      "summary": "Clean application. Genuine certificate, consistent faculty, ordinary lab photos.",
+      "is_fraud": false,
+      "fraud_types": [],
+      "expected": [],
+      "expected_honest_flags": [],
+      "must_not_min_strength": "medium",
+      "documents": [
+        {
+          "file": "applications/shantiniketan/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "e061af74434f339480a7c92872ed0227b192ff6632ae9bec5e2a4f3485dc4f97"
+        },
+        {
+          "file": "applications/shantiniketan/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "c2f784132b8470c7f7838a5df485762bef5e757ad4fbbcefd961283799f094d8"
+        },
+        {
+          "file": "applications/shantiniketan/photos/computer_lab_1.jpg",
+          "document_type": "lab_photo",
+          "claim": "Computer Lab 1 - 30 systems",
+          "sha256": "ecd281909292359f43f42c6a17d95a4311430c8b61986964486c67682f075588"
+        },
+        {
+          "file": "applications/shantiniketan/photos/classroom_a.jpg",
+          "document_type": "classroom_photo",
+          "claim": "Classroom A-101",
+          "sha256": "bc5ad4d8f47bbeadd27f492981fe74b13504313ae0701ecb8e70dee9e68345c7"
+        }
+      ]
+    },
+    {
+      "key": "malabar",
+      "processing_order": 2,
+      "institution": "Malabar Institute of Technology",
+      "summary": "Clean application whose certificate is later reused by another institution. Website snapshot is stale; one photo has no EXIF.",
+      "is_fraud": false,
+      "fraud_types": [],
+      "expected": [],
+      "expected_honest_flags": [],
+      "must_not_min_strength": "medium",
+      "documents": [
+        {
+          "file": "applications/malabar/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "988718e110c06755e270c64d04dedfc3e62214896617a3fbffbd5cb0e67ddef8"
+        },
+        {
+          "file": "applications/malabar/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "0fe17d2552e26e7b0d61a8126ccc26d2cdc5054ef77202b6048a610da8b4f26a"
+        },
+        {
+          "file": "applications/malabar/photos/electrical_lab.jpg",
+          "document_type": "lab_photo",
+          "claim": "Electrical Machines Lab",
+          "sha256": "c6d6e9b865154894c5c96bc86cdbb59fced64e287de018199fac9e93244562c9"
+        },
+        {
+          "file": "applications/malabar/photos/seminar_hall.jpg",
+          "document_type": "classroom_photo",
+          "claim": "Seminar Hall",
+          "sha256": "f81a09773c6165b3014eeebad1b279e8b800d1dc38bde1d340cf8ce26619ae09"
+        }
+      ]
+    },
+    {
+      "key": "deccan",
+      "processing_order": 3,
+      "institution": "Deccan Plateau Institute of Engineering",
+      "summary": "Genuine certificate. Faculty moved between departments on paper (total unchanged). One classroom image carries an image-generator marker.",
+      "is_fraud": true,
+      "fraud_types": [
+        "inflated_faculty",
+        "ai_generated_image"
+      ],
+      "expected": [
+        {
+          "fraud_type": "inflated_faculty",
+          "any_of": [
+            "faculty_count_exceeds_records",
+            "faculty_counts_redistributed"
+          ],
+          "min_strength": "medium"
+        },
+        {
+          "fraud_type": "ai_generated_image",
+          "any_of": [
+            "photo_possible_synthetic_content"
+          ],
+          "min_strength": "weak"
+        }
+      ],
+      "expected_honest_flags": [],
+      "must_not_min_strength": null,
+      "documents": [
+        {
+          "file": "applications/deccan/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "1792ac05597f2bb483823a68b093b3d1dc4df7f1553b8232226452a2f040c2d1"
+        },
+        {
+          "file": "applications/deccan/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "0c45ab05c670887b99ee0df87c3f9331937468d350bf9a0be636d0cc838ffb6a"
+        },
+        {
+          "file": "applications/deccan/photos/it_lab.jpg",
+          "document_type": "lab_photo",
+          "claim": "IT Lab 2 - 24 systems",
+          "sha256": "c3d78d911e199347ecb247c3f8f6068b64e0b5ebfaaab244fd3c73c5cd6136d6"
+        },
+        {
+          "file": "applications/deccan/photos/smart_classroom.png",
+          "document_type": "classroom_photo",
+          "claim": "Smart Classroom B-204",
+          "sha256": "cdf56aae8dea903c836dc7385756ac312a56822713b21cbf56dbb3d39e93f3ef"
+        }
+      ]
+    },
+    {
+      "key": "aravalli",
+      "processing_order": 4,
+      "institution": "Aravalli Institute of Technology and Research",
+      "summary": "Clean, digitally signed certificate. Declared faculty one above records in one department - inside tolerance (a hard negative).",
+      "is_fraud": false,
+      "fraud_types": [],
+      "expected": [],
+      "expected_honest_flags": [],
+      "must_not_min_strength": "medium",
+      "documents": [
+        {
+          "file": "applications/aravalli/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": null
+        },
+        {
+          "file": "applications/aravalli/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "735221003ba121247cedd2ed7c205fdf34c94bbdbde257eaa09fed6ffc57d723"
+        },
+        {
+          "file": "applications/aravalli/photos/workshop.jpg",
+          "document_type": "lab_photo",
+          "claim": "Central Workshop",
+          "sha256": "ea131f80f25248a9c56ae13a0ee651aeffbb80a735612ff80b2024935aab436a"
+        }
+      ]
+    },
+    {
+      "key": "gomati",
+      "processing_order": 5,
+      "institution": "Gomati Valley College of Engineering",
+      "summary": "Certificate number edited by one digit (QR still carries the original). CSE faculty inflated by 40% over records.",
+      "is_fraud": true,
+      "fraud_types": [
+        "edited_certificate_number",
+        "inflated_faculty"
+      ],
+      "expected": [
+        {
+          "fraud_type": "edited_certificate_number",
+          "any_of": [
+            "issuer_record_not_found",
+            "qr_certificate_id_mismatch",
+            "signature_digest_mismatch",
+            "issuer_field_mismatch"
+          ],
+          "min_strength": "strong"
+        },
+        {
+          "fraud_type": "inflated_faculty",
+          "any_of": [
+            "faculty_count_exceeds_records",
+            "faculty_counts_redistributed"
+          ],
+          "min_strength": "medium"
+        }
+      ],
+      "expected_honest_flags": [],
+      "must_not_min_strength": null,
+      "documents": [
+        {
+          "file": "applications/gomati/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "0d62301feb0fc6730abb7e9748658a0e34f5eebcd9e27f6ac3fa6d4baf57f367"
+        },
+        {
+          "file": "applications/gomati/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "af7493133deec04fd99fb58ab9cb9a471b4ede367e8c3d5ec088aa13884dd2a8"
+        },
+        {
+          "file": "applications/gomati/photos/cse_lab.jpg",
+          "document_type": "lab_photo",
+          "claim": "CSE Lab - 36 systems",
+          "sha256": "87fb1e78e2e2d097863def317681c38ee496ce735e69028ec06338fe795aab7f"
+        }
+      ]
+    },
+    {
+      "key": "vindhya",
+      "processing_order": 6,
+      "institution": "Vindhya Institute of Technology",
+      "summary": "Genuine certificate number, but the QR points to a lookalike verification domain. A lab photo is Shantiniketan's, mirrored and shrunk.",
+      "is_fraud": true,
+      "fraud_types": [
+        "qr_fake_domain",
+        "reused_lab_photo"
+      ],
+      "expected": [
+        {
+          "fraud_type": "qr_fake_domain",
+          "any_of": [
+            "qr_domain_not_allowlisted",
+            "qr_deceptive_url_pattern"
+          ],
+          "min_strength": "strong"
+        },
+        {
+          "fraud_type": "reused_lab_photo",
+          "any_of": [
+            "photo_reused_across_submissions"
+          ],
+          "min_strength": "medium"
+        }
+      ],
+      "expected_honest_flags": [],
+      "must_not_min_strength": null,
+      "documents": [
+        {
+          "file": "applications/vindhya/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "edb048be1abb6323f7d62dc2f9726202b24b17e0eefcc0a621e7cdabefb5dd43"
+        },
+        {
+          "file": "applications/vindhya/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "2f4d9d5295d55ed3c0b3e31104d9ce017d24e17cc15b8d24cdfec665ba96d0c3"
+        },
+        {
+          "file": "applications/vindhya/photos/computer_centre.jpg",
+          "document_type": "lab_photo",
+          "claim": "Computer Centre - 40 systems",
+          "sha256": "8e1c472ac8b32ba532ec25c9d4c243064a85a2a216aa6d63d132d75722c3de46"
+        },
+        {
+          "file": "applications/vindhya/photos/mech_lab.jpg",
+          "document_type": "lab_photo",
+          "claim": "Mechanical Lab",
+          "sha256": "a97f88e81bc0274711962b7ba0a84141abbf475f89a7cbca87d694c3a280f867"
+        }
+      ]
+    },
+    {
+      "key": "chenab",
+      "processing_order": 7,
+      "institution": "Chenab Valley College of Technology",
+      "summary": "Submits Malabar's certificate number under its own name. Four CSE faculty are Deccan's, faculty ids and all.",
+      "is_fraud": true,
+      "fraud_types": [
+        "duplicate_certificate",
+        "shared_faculty"
+      ],
+      "expected": [
+        {
+          "fraud_type": "duplicate_certificate",
+          "any_of": [
+            "certificate_number_reuse",
+            "issuer_field_mismatch",
+            "issuer_qr_id_other_institution"
+          ],
+          "min_strength": "strong"
+        },
+        {
+          "fraud_type": "shared_faculty",
+          "any_of": [
+            "faculty_shared_across_institutions"
+          ],
+          "min_strength": "medium"
+        }
+      ],
+      "expected_honest_flags": [],
+      "must_not_min_strength": null,
+      "documents": [
+        {
+          "file": "applications/chenab/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "13d322140cbc8753d3b6905e054130efef318635ffd91c84040c54d24810f844"
+        },
+        {
+          "file": "applications/chenab/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "ef85856606c66c0a3f0ce0b2e36efd35253faee96778effb69fc06bf54038c0b"
+        },
+        {
+          "file": "applications/chenab/photos/ece_lab.jpg",
+          "document_type": "lab_photo",
+          "claim": "ECE Lab",
+          "sha256": "b7d3376b1a8b9fba2b8ae1b785d4ab2a9a64943e7bdc7f2c54f2f60d38c63fc9"
+        }
+      ]
+    },
+    {
+      "key": "nilgiri",
+      "processing_order": 8,
+      "institution": "Nilgiri College of Engineering and Technology",
+      "summary": "Certificate genuinely issued but since revoked by the issuer (honest document, needs review). One lab photo has a cloned region and an editor tag.",
+      "is_fraud": true,
+      "fraud_types": [
+        "photo_manipulation"
+      ],
+      "expected": [
+        {
+          "fraud_type": "photo_manipulation",
+          "any_of": [
+            "photo_copy_move_region",
+            "photo_ela_inconsistency"
+          ],
+          "min_strength": "weak"
+        }
+      ],
+      "expected_honest_flags": [
+        "issuer_status_not_active"
+      ],
+      "must_not_min_strength": null,
+      "documents": [
+        {
+          "file": "applications/nilgiri/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "380f1fbd2ad984e709c361a25999a23c876ea84f224e7864687af585c33e43c2"
+        },
+        {
+          "file": "applications/nilgiri/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "6746eeff4e1dcf37cd4fb91382ec37a5a5082beac8b082360b7d34739686c14c"
+        },
+        {
+          "file": "applications/nilgiri/photos/physics_lab.jpg",
+          "document_type": "lab_photo",
+          "claim": "Physics Lab - 20 workstations",
+          "sha256": "c27640ef29a814ca1902e0ecae21389209626ec3a30747ba736bf6eae16f5bba"
+        },
+        {
+          "file": "applications/nilgiri/photos/drawing_hall.jpg",
+          "document_type": "classroom_photo",
+          "claim": "Drawing Hall",
+          "sha256": "6ac7d4daf824ca9a5be2516d2f18fca72f4be0869bea3a2eea962f5f9c436b1e"
+        }
+      ]
+    },
+    {
+      "key": "harita",
+      "processing_order": 9,
+      "institution": "Harita Institute of Science and Technology",
+      "summary": "Certificate expired in 2019 (honest document, needs review). Lab photo geotagged ~600 km away with a capture date after upload.",
+      "is_fraud": true,
+      "fraud_types": [
+        "photo_location"
+      ],
+      "expected": [
+        {
+          "fraud_type": "photo_location",
+          "any_of": [
+            "photo_gps_far_from_institution",
+            "photo_capture_date_after_upload"
+          ],
+          "min_strength": "medium"
+        }
+      ],
+      "expected_honest_flags": [
+        "issuer_expired",
+        "accreditation_does_not_cover_session"
+      ],
+      "must_not_min_strength": null,
+      "documents": [
+        {
+          "file": "applications/harita/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "6f8563f0c75a78e35d00ceed080a1cb779c06d028bec57f714cf231cc7f5f822"
+        },
+        {
+          "file": "applications/harita/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "c8d5cd0cd29937591e5ce63c34fcc06a9be10ea32159a55f2808b67edab2a7f6"
+        },
+        {
+          "file": "applications/harita/photos/civil_lab.jpg",
+          "document_type": "lab_photo",
+          "claim": "Civil Engineering Lab",
+          "sha256": "043244ee1bc54e3ae8699efcc44db15bfb2d8c2642e497ccd8297f3115717ff5"
+        }
+      ]
+    },
+    {
+      "key": "brahmaputra",
+      "processing_order": 10,
+      "institution": "Brahmaputra College of Engineering",
+      "summary": "Digitally signed certificate whose number was edited after signing: the signature no longer matches the bytes.",
+      "is_fraud": true,
+      "fraud_types": [
+        "edited_certificate_number"
+      ],
+      "expected": [
+        {
+          "fraud_type": "edited_certificate_number",
+          "any_of": [
+            "issuer_record_not_found",
+            "qr_certificate_id_mismatch",
+            "signature_digest_mismatch",
+            "issuer_field_mismatch"
+          ],
+          "min_strength": "strong"
+        }
+      ],
+      "expected_honest_flags": [],
+      "must_not_min_strength": null,
+      "documents": [
+        {
+          "file": "applications/brahmaputra/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": null
+        },
+        {
+          "file": "applications/brahmaputra/faculty.csv",
+          "document_type": "faculty_declaration",
+          "sha256": "9e86123fcea57aec24ad2008d4925d4f95b0c32352da27298650c598e97ae310"
+        },
+        {
+          "file": "applications/brahmaputra/photos/library_lab.jpg",
+          "document_type": "lab_photo",
+          "claim": "Digital Library - 18 systems",
+          "sha256": "3433f18f690eb0986875cfd5987baca0efcd40e4694de7c925846aec8cc41cc6"
+        }
+      ]
+    },
+    {
+      "key": "saraswati",
+      "processing_order": 11,
+      "institution": "Saraswati Institute of Technology and Management",
+      "summary": "Submits another institution's genuine certificate (it verifies at the issuer, but names Konkan Coast). The faculty list and lab photos are missing.",
+      "is_fraud": true,
+      "fraud_types": [
+        "certificate_of_other_institution"
+      ],
+      "expected": [
+        {
+          "fraud_type": "certificate_of_other_institution",
+          "any_of": [
+            "certificate_names_other_institution"
+          ],
+          "min_strength": "strong"
+        }
+      ],
+      "expected_honest_flags": [
+        "application_document_missing"
+      ],
+      "must_not_min_strength": null,
+      "documents": [
+        {
+          "file": "applications/saraswati/certificate.pdf",
+          "document_type": "accreditation_certificate",
+          "sha256": "c3c4cecff136f86a0fb98782b11248d612fa0823f4e50105606cca7eec78a8d9"
+        },
+        {
+          "file": "applications/saraswati/photos/classroom_c.jpg",
+          "document_type": "classroom_photo",
+          "claim": "Classroom C-12",
+          "sha256": "c8580f129bc720e023be349cbf312eaa1af077549c6d4560d05f677482122881"
+        }
+      ]
+    }
+  ]
+}

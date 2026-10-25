@@ -11,6 +11,7 @@ from typing import Any, Callable
 
 from .base import LLMProvider, LLMUnavailableError
 from .openai_compatible import OpenAICompatibleProvider
+from .rules_provider import RulesProvider
 from .stub_provider import StubProvider
 
 # Names that resolve to the OpenAI-compatible client. The name is passed
@@ -29,6 +30,8 @@ _PROVIDERS: dict[str, Callable[[dict[str, Any]], LLMProvider]] = {
     name: _openai_compatible(name) for name in _OPENAI_COMPATIBLE
 }
 _PROVIDERS["stub"] = StubProvider
+# Offline label reader: the configured fallback when no model is reachable.
+_PROVIDERS["rules"] = RulesProvider
 
 
 def available_providers() -> list[str]:

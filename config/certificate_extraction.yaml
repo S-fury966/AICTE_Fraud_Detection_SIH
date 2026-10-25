@@ -3,7 +3,7 @@
 # The LLM reads and reports; the checks below are what the code then enforces.
 # Bump `config_version` whenever a value changes: it is stamped onto every
 # result alongside the prompt version.
-config_version: certificate-extraction-v3
+config_version: certificate-extraction-v4
 
 prompt:
   # Resolves to backend/app/llm/prompts/<name>.<version>.md
@@ -13,6 +13,13 @@ prompt:
 llm:
   # Name registered in backend/app/llm/registry.py
   provider: groq
+  # Used only when the provider above cannot run at all (no key, quota of
+  # zero). `rules` is the offline label reader in app/llm/rules_provider.py: no
+  # network, no model, same JSON contract, and its values pass the same snippet
+  # guard as a model's. The run records which provider actually answered, so a
+  # reading made by the fallback is never mistaken for a model's. Set to null
+  # to make a missing key fail the stage instead.
+  fallback_provider: rules
   # Attempts after the first one, when the response fails schema validation.
   max_retries: 1
   # Sampling temperature, passed to providers that accept it. 0 is as close to
@@ -43,6 +50,21 @@ llm:
       timeout_seconds: 60
       rate_limit_retries: 3
       rate_limit_backoff_seconds: 2.0
+    rules:
+      model: label-rules-v1
+      # Printed labels, per field. Matched at the start of a line, longest
+      # first, case-insensitive. The value is the rest of that line, or the
+      # next non-empty line for a two-column table.
+      labels:
+        institution_name: ["Name of Institution", "Institution"]
+        certificate_number: ["Certificate Number", "Certificate No.", "Certificate No", "Reference No.", "Reference Number"]
+        issuing_body: ["Issuing Body", "Issuing Authority", "Issued By"]
+        programme: ["Programme Accredited", "Accredited Programme", "Programmes", "Programme"]
+        accreditation_status_or_grade: ["Assessment Grade", "Grade Awarded", "Grade", "Outcome"]
+        issue_date: ["Date of Issue", "Issued On", "Issue Date"]
+        valid_from: ["Valid From", "Effective From"]
+        valid_to: ["Valid Until", "Valid To", "Effective Until"]
+        signatory_name: ["Authorised Signatory", "Signatory", "Signed"]
     mistral:
       base_url: https://api.mistral.ai/v1
       model: mistral-small-latest

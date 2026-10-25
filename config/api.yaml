@@ -1,0 +1,80 @@
+# The reviewer-facing HTTP API (app/api).
+config_version: api-v2
+
+server:
+  # Localhost only. This is a prototype holding sensitive institutional data;
+  # exposing it on a network interface is a deployment decision, not a default.
+  host: 127.0.0.1
+  # Not 8000: that port is the default of half the frameworks on a dev
+  # machine. Override with --port.
+  port: 8765
+
+cors_origins:
+  - http://localhost:5175
+  - http://127.0.0.1:5175
+
+issuer:
+  # Run the mock issuer in-process (no second server). False uses
+  # issuer.base_url from config/issuer_verification.yaml over HTTP.
+  in_process: true
+
+# Reference date for expiry and staleness. null = today (UTC).
+as_of: null
+
+uploads:
+  max_bytes: 26214400
+  allowed_extensions: [".pdf", ".jpg", ".jpeg", ".png", ".csv", ".json"]
+
+identity:
+  # An officer asserts who they are in these headers; the role is validated
+  # against persistence.yaml and every action is recorded with it.
+  actor_header: X-Actor
+  role_header: X-Role
+  default_actor: officer.demo
+  default_role: officer
+
+sign_in:
+  # Roles listed here cannot be asserted in a header: POST /api/session with
+  # the role's passcode returns a signed token, and only that token grants the
+  # role. Otherwise anyone could read the audit trail by claiming to be senior.
+  # Stored as PBKDF2-SHA256 hashes, never the passcode. Demo passcodes:
+  # senior_reviewer "senior@2026", admin "admin@2026" - synthetic, change them
+  # with: python -m app.api.passcode <role>
+  # A real deployment replaces this with the department's SSO.
+  token_minutes: 480
+  # Refusals per role before further attempts wait out the window.
+  max_failures: 5
+  failure_window_seconds: 300
+  passcodes:
+    senior_reviewer:
+      salt: 2b073e66854aa995fe0978ac8c03595e
+      iterations: 200000
+      pbkdf2_sha256: 932cb9589600207c8085f5e1c9f323a955c2e86d4534489582c5b0f8009b4a30
+    admin:
+      salt: 0b7d7617aded88c60dedf2679214e113
+      iterations: 200000
+      pbkdf2_sha256: a0dec2328ac47a3763373d34c057f20ee1c8c12f35ea65fff2794c7efaba0a77
+
+permissions:
+  # Which roles may do what. Enforced by the API, recorded in the audit log.
+  # A role asserted without login is not authentication - it is the shape the
+  # real thing would plug into.
+  submit_application: [officer, senior_reviewer, admin]
+  review_finding: [officer, senior_reviewer, admin]
+  rerun: [senior_reviewer, admin]
+  view_audit_log: [senior_reviewer, admin]
+  verify_audit_chain: [senior_reviewer, admin]
+  view_config: [officer, senior_reviewer, admin]
+
+demo:
+  data_dir: data/demo
+  evaluation_path: data/demo/evaluation.json
+
+document_types:
+  # Shown in the upload form. The routing to detectors is in persistence.yaml.
+  - {value: accreditation_certificate, label: "Accreditation certificate", detector: certificate_authenticity}
+  - {value: noc, label: "No objection certificate", detector: certificate_authenticity}
+  - {value: faculty_declaration, label: "Faculty list (CSV)", detector: faculty_consistency}
+  - {value: lab_photo, label: "Laboratory photo", detector: photo_authenticity}
+  - {value: classroom_photo, label: "Classroom photo", detector: photo_authenticity}
+  - {value: infrastructure_photo, label: "Infrastructure photo", detector: photo_authenticity}

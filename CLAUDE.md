@@ -24,6 +24,14 @@ forgery or misconduct occurred. Every output is a *preliminary indicator*.
    confidence; flags combine into a weighted risk level (low/medium/high) with configurable
    weights. Risk level **prioritizes review order only**.
 
+5. **Application validation and regulatory compliance** (added 2026-10-25 at the user's
+   request, from the SIH26261 problem statement "AI-Powered Application Validation,
+   Document Authentication and Regulatory Compliance Verification") — required
+   documents present, certificate names the applicant, accreditation covers the
+   session, and student:faculty / cadre / qualification norms on both the declared and
+   the AICTE-recorded counts. `backend/app/compliance`, `config/compliance_checks.yaml`.
+   The norms are **mock values**, labelled as such in every result.
+
 Out of scope: validating every parameter of every document; any automated
 approval/rejection; access to real government databases.
 
@@ -86,6 +94,7 @@ detectors. Do not add an automated decision path.
   scraping of real institution websites.
 - **Authentication**: skipped for the demo. Roles (officer / senior reviewer / admin)
   remain in the data model and in audit records as an actor field, but there is no login.
+  *Superseded for senior roles on 2026-10-25 — see Step 13.*
 - **PDF digital signatures**: scope is limited to **post-signature modification** detection
   — does the signature's ByteRange cover the whole file, are there incremental updates
   after signing. No certificate-chain or trust-store validation. Statuses:
@@ -111,15 +120,20 @@ detectors. Do not add an automated decision path.
   `needs_more_info`) and the action-to-status map live in `config/persistence.yaml`, so what
   "dismiss" means is an organisation's decision. Repository functions only; no UI.
 
-### Still open (ask when the relevant step is reached)
-- Faculty identity matching: synthetic unique ID vs. fuzzy name+qualification matching.
-- Admin UI for live editing of weights/allowlists vs. config files only. Now covers five
-  config files: extraction, certificate extraction, QR domains, issuer verification,
-  persistence. Step 5 built the review-action repository functions but no UI, so the
-  question is still open for both review and configuration.
+- **Faculty identity matching (resolved 2026-10-25):** synthetic unique faculty ID is
+  primary (a shared ID is strong); deterministic normalised name + same qualification
+  is the fallback, medium at most. No LLM in the matching.
+- **Admin UI (resolved 2026-10-25):** config stays in files. The dashboard shows every
+  config file read-only with its version and hash; the review workflow is in the UI.
+
+### Still open
+- Claim-vs-image consistency needs a free VLM; the seam exists
+  (`claim_consistency.vlm_provider`) and records `source_unavailable` until one is chosen.
 
 ## Runtime (set in step 1)
 - **Python 3.10** in `.venv`, created from the 3.10 interpreter on the dev machine.
+  (The macOS machine has no 3.10; its `.venv` is 3.12, which satisfies the same
+  `<3.13` pin. 442 tests pass on it.)
   Reason: `rapidocr-onnxruntime` 1.4.x declares `Requires-Python <3.13`, a hard metadata
   pin, so the machine's default 3.14 cannot install it. (onnxruntime itself does ship a
   cp314 wheel, so the constraint is the RapidOCR wrapper alone. Moving to 3.13+ would mean
@@ -169,6 +183,137 @@ detectors. Do not add an automated decision path.
   4 noise levels, with labels written from the recipes. The on-disk LLM response
   cache added in `backend/app/llm/cache.py`. All output under `data/eval/`
   (gitignored). Detectors unchanged by this step.
+
+- **Steps 8–11 — faculty, photos, scoring, API, dashboard: done (2026-10-25).**
+  `backend/app/faculty`, `backend/app/photos`, `backend/app/scoring`,
+  `backend/app/explain`, `backend/app/api` (`python -m app.api`, port 8765),
+  `backend/demo` (generate / load / evaluate), `frontend/` (port 5175),
+  `run_demo.sh`. Configs: `faculty_checks`, `photo_checks`, `risk_scoring`,
+  `explanations`, `api`. Schema `schema-v2`: `detector_details`, `faculty_members`,
+  `risk_assessments`, `documents.claim`, faculty/photo config versions on runs.
+  Details in `backend/app/faculty/README.md`, `backend/app/photos/README.md`.
+
+### Steps 8–11 decisions
+
+**Routing by document type** (`pipeline.document_kinds` in persistence.yaml):
+`faculty_declaration` runs the faculty stage; lab/classroom/infrastructure photos
+run five photo stages; everything else runs the six certificate stages. One run
+per document either way, and `Pipeline.rerun_document()` adds a new run to an
+existing document — never edits an old one.
+
+**Offline field reader.** With no API key the step 2 provider falls back to
+`rules` (`llm.fallback_provider`), a label reader returning the same JSON
+contract. Its values pass the same snippet guard, and the run records
+`provider: rules`, so a fallback reading is never mistaken for a model's. Set the
+fallback to null to make a missing key fail the stage instead.
+
+**Risk scoring is additive only.** Points come from findings; a verified lookup,
+an intact signature or the absence of findings adds zero and nothing subtracts.
+The only removal is a human dismissing a finding (recorded, re-scored, history
+kept in `risk_assessments`). Floors: any strong → at least medium; strong from
+two detectors → high. Unreachable sources (`faculty_source_unavailable`,
+`issuer_source_unavailable`) are visible findings worth 0 points.
+`near_duplicate_page_image` is worth 2 points: it fires on template siblings.
+
+**Explanations** are a deterministic template; an optional LLM rewrite is
+discarded if it contains a banned term or a number absent from the template.
+
+**API.** Identity via `X-Actor`/`X-Role` headers (no login); role validated, the
+`system` role refused, permissions per action in `config/api.yaml`, report reads
+and file views audited. One application at a time behind a process lock.
+Ports 8765/5175 because 8000/5173 are commonly taken on a dev machine.
+
+**Demo set** (`backend/demo`): ten applications, nine injected issue types,
+three clean controls, two honest-but-flag-expected (revoked, expired). Labels
+from recipes only. `python -m demo.evaluate` runs on a temporary database:
+11/11 injected issues detected, 0 medium/strong findings on clean controls,
+~0.4 s per application. Photo thresholds (ELA, copy-move, phash) were measured on
+these renders and are recorded in `config/photo_checks.yaml` — they show the
+detectors work as designed, not real-world accuracy.
+
+**Reviewer conveniences (`app/api/extras.py`)** — each reads stored results or
+runs the unchanged pipeline, and none adds a judgement:
+- *Streamed submission* (`POST /api/applications/stream`,
+  `/api/demo/samples/{key}/stream`, NDJSON): `Pipeline.on_stage` is an observer
+  called after each stage is recorded; a listener's failure can never fail a check.
+  The process lock still serialises submissions. The UI paces the reveal (~90 ms per
+  event) and shows the server's real elapsed time.
+- *Connections* (`GET /api/network`): institutions linked by cross-references and
+  shared-faculty findings. Template-sibling page matches with different numbers are
+  omitted, or the graph becomes a mesh.
+- *Search* (`GET /api/search`): certificate numbers (printed and QR), faculty
+  IDs/names, institutions, filenames. Audited by query **hash**, since a query can be
+  a person's name.
+- *Scrutiny note* (`GET /api/applications/{id}/export.pdf`): PyMuPDF `Story`;
+  disclaimer in the body and on every page footer; the export and its SHA-256 are
+  audited.
+
+### Step 12 decisions (2026-10-25)
+
+**Application-level checks own their findings.** They look at the set of documents, so
+their findings belong to an `application_checks` row (schema-v3), not to a document run:
+`findings.run_id` is nullable and `findings.application_check_id` was added; exactly one
+is set (`save_findings` refuses otherwise). `Pipeline.check_application()` runs after the
+documents (API, stream, re-run, demo loader) and, like runs, never overwrites: the latest
+check is what scoring and the queue read. Detectors `application_validation` (weight 1.0)
+and `regulatory_compliance` (0.7) in `risk_scoring.yaml` (risk-scoring-v2).
+
+**Applicant identity is the check the issuer cannot do.** A genuine certificate of
+another college verifies perfectly at the issuer; comparing its printed institution with
+the applicant (abbreviation-aware, threshold 0.85) is what notices. Demo scenario
+`saraswati` submits Konkan Coast's genuine certificate.
+
+**Norms are evaluated on both counts.** `compliance_met_only_as_declared` fires when the
+declared faculty meet the ratio and the AICTE-recorded ones do not — the motive behind
+inflation (demo: Gomati CSE 17.1:1 declared vs 24:1 recorded). Demo rosters assign cadre
+by position (1:2:6) and doctorates to senior designations so clean controls genuinely
+meet the mock norms.
+
+**Upload collision fixed.** Two uploaded files with the same name used to overwrite each
+other in the scratch directory; each upload now gets its own slot.
+
+**UI design system** (`frontend/src/index.css`): warm neutral canvas, ink near-black for
+active pills and dark panels, butter yellow as the warm accent, iris (electric indigo)
+for insight cards and links, hatched fills for "remainder / not yet". Status colours
+(critical / serious / warning / good) are reserved for meaning and always paired with a
+label. Top pill navigation replaced the sidebar. README screenshots in `docs/screenshots/`.
+
+### Step 13 decisions (2026-10-25, pre-submission review)
+
+**Senior roles need a passcode** (user request: an officer could read the audit trail
+by picking "senior reviewer" in a dropdown, or with one curl header). Roles listed
+under `sign_in.passcodes` in `api.yaml` are refused in `X-Role` (401). `POST
+/api/session` checks the role's passcode (PBKDF2-SHA256, 200k iterations, hash only
+in config) and returns an HMAC-signed `actor|role|expiry` token; with a bearer token,
+the token alone sets the identity. Key from `SIH_SESSION_SECRET`, else random per
+process (a restart signs everyone out). Five refusals per role in five minutes lock
+that role for the window. `signed_in`, `sign_in_refused` (reason only) and
+`signed_out` are audited; the passcode never is. Officers still name themselves —
+the user asked only for the upper roles. `app/api/sessions.py`; new passcodes via
+`python -m app.api.passcode <role>`.
+
+**Per-application audit entries are senior-only too** (`/applications/{id}/audit`
+had no permission check). The UI's "History" tab keeps run history for officers
+and shows the entries only to senior roles. The endpoint now also includes
+application-check and application-level finding entries, which it used to miss.
+
+**Reviews carry forward across re-runs** (`review.carry_forward_on_rerun`). A
+re-run used to reopen every finding, wiping the officers' work and resetting the
+priority. Now an indicator with the same detector, type and reason as a reviewed
+one in the previous run of that document (or previous application check) keeps its
+status, with a `carried_forward` review action naming the earlier finding id.
+Matching on the reason is deliberate: it quotes the values compared, so a changed
+fact is a new finding and starts open.
+
+**Dashboard counts read current findings only.** `/api/stats` used to count open
+findings from every run, so a re-run doubled the bars; it now uses
+`latest_findings_for_application`, which also brings application-level findings
+into "top open types".
+
+**Evidence images are fetched with the viewer's identity** (`SecureImage`). An
+`<img src>` sends no headers, so every preview was audited as the default
+`officer.demo`. Previews and ELA heatmaps are `no-store`: a cached view would skip
+its audit entry. ELA views are now audited too.
 
 ### The snippet-validation rule (step 2's core guard)
 Every non-null value the model returns must be traceable to the source text, or code

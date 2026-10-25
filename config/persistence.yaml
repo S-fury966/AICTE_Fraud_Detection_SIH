@@ -2,7 +2,7 @@
 #
 # Bump `config_version` whenever a value changes: it is stamped onto every
 # check run alongside the other detectors' config versions.
-config_version: persistence-v2
+config_version: persistence-v3
 
 database:
   # SQLAlchemy URL. SQLite for the prototype; the models use only portable
@@ -64,6 +64,12 @@ review:
     dismiss: dismissed
     request_more_info: needs_more_info
     comment: null
+  # On a re-run, an indicator identical to one in the previous run (same
+  # detector, type and reason - the reason quotes the values compared) keeps
+  # that finding's review status, recorded as a `carried_forward` action that
+  # names the earlier finding. Anything that changed starts `open` again.
+  # false = every re-run starts every finding open.
+  carry_forward_on_rerun: true
 
 pipeline:
   # Stages run in this order. A stage that cannot run is recorded as skipped
@@ -87,3 +93,26 @@ pipeline:
   # relationship between two applications, not about one certificate's
   # authenticity, and a reviewer filtering the queue will want them apart.
   duplicate_detector_name: duplicate_detection
+  # Routing by uploaded document type. A type listed here runs that
+  # detector's stages; every other type runs the certificate stages above.
+  document_kinds:
+    faculty:
+      - faculty_declaration
+    photo:
+      - lab_photo
+      - classroom_photo
+      - infrastructure_photo
+  faculty_stages:
+    - faculty_consistency
+  photo_stages:
+    - photo_metadata
+    - photo_reuse
+    - photo_manipulation
+    - photo_synthetic_hint
+    - photo_claim_consistency
+  # Advisory stages do not make a run "completed_with_failures" when they
+  # cannot run. Claim-vs-image needs a VLM, which the demo does not configure.
+  advisory_stages:
+    - photo_claim_consistency
+  faculty_detector_name: faculty_consistency
+  photo_detector_name: photo_authenticity

@@ -34,3 +34,23 @@ def parse_status(value: str) -> VerificationStatus:
         raise ValueError(
             f"{value!r} is not a verification status; allowed: {allowed}"
         ) from exc
+
+
+# Least to most severe. The issuer detector reads its own ordering from config
+# (`status_severity`); detectors without one use this, which is the same list.
+DEFAULT_SEVERITY = (
+    VerificationStatus.VERIFIED,
+    VerificationStatus.VERIFICATION_PENDING,
+    VerificationStatus.EXPIRED,
+    VerificationStatus.SOURCE_UNAVAILABLE,
+    VerificationStatus.MANUAL_REVIEW_REQUIRED,
+    VerificationStatus.MISMATCH_DETECTED,
+)
+
+
+def most_severe(statuses: list[VerificationStatus | str]) -> VerificationStatus | None:
+    """The most severe of several statuses, or None for an empty list."""
+    parsed = [parse_status(str(getattr(s, "value", s))) for s in statuses]
+    if not parsed:
+        return None
+    return max(parsed, key=DEFAULT_SEVERITY.index)

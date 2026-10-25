@@ -107,6 +107,9 @@ class Document(Base):
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     uploaded_by: Mapped[str] = mapped_column(String(256), nullable=False)
     uploaded_role: Mapped[str] = mapped_column(String(64), nullable=False)
+    # What the applicant says a photo shows ("Computer Lab 2, 30 systems").
+    # A claim to be checked, never evidence in itself.
+    claim: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     application: Mapped[Application] = relationship(back_populates="documents")
@@ -147,6 +150,9 @@ class CheckRun(Base):
     # not retrospectively annotated with rules that were not applied to them.
     signature_config_version: Mapped[str | None] = mapped_column(String(64))
     duplicate_config_version: Mapped[str | None] = mapped_column(String(64))
+    # Added with the faculty and photo detectors (schema-v2).
+    faculty_config_version: Mapped[str | None] = mapped_column(String(64))
+    photo_config_version: Mapped[str | None] = mapped_column(String(64))
 
     # Hashes of the config files as loaded, keyed by name. A dict rather than
     # four more columns: these exist to detect that a file changed, not to be
@@ -187,6 +193,9 @@ class CheckRun(Base):
     perceptual_hashes: Mapped[list["PerceptualHashRow"]] = relationship(
         cascade="all, delete-orphan",
         foreign_keys="PerceptualHashRow.run_id",
+    )
+    detector_details: Mapped[list["DetectorDetail"]] = relationship(
+        cascade="all, delete-orphan"
     )
 
 
@@ -354,8 +363,14 @@ class FindingRow(Base):
     __tablename__ = "findings"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    run_id: Mapped[int] = mapped_column(
-        ForeignKey("check_runs.id", ondelete="CASCADE"), nullable=False
+    # A finding belongs to exactly one of: a document's check run, or an
+    # application-level check (completeness, compliance norms), which looks at
+    # every document of an application together. Added in schema-v3.
+    run_id: Mapped[int | None] = mapped_column(
+        ForeignKey("check_runs.id", ondelete="CASCADE"), nullable=True
+    )
+    application_check_id: Mapped[int | None] = mapped_column(
+        ForeignKey("application_checks.id", ondelete="CASCADE"), nullable=True, index=True
     )
     detector: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
@@ -370,7 +385,8 @@ class FindingRow(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    run: Mapped[CheckRun] = relationship(back_populates="findings")
+    run: Mapped[CheckRun | None] = relationship(back_populates="findings")
+    application_check: Mapped["ApplicationCheck | None"] = relationship(back_populates="findings")
     review_actions: Mapped[list["ReviewAction"]] = relationship(
         back_populates="finding", cascade="all, delete-orphan"
     )
@@ -566,4 +582,116 @@ class SignatureRow(Base):
         UniqueConstraint(
             "run_id", "signature_index", name="uq_signature_per_run"
         ),
+    )
+
+
+class DetectorDetail(Base):
+    """The full structured result of a faculty or photo check, for the report.
+
+    Findings say what is worth a reviewer's attention; this says everything
+    that was measured, including what was fine. A per-department table where
+    every row matched, or an EXIF block with nothing odd in it, is evidence a
+    reviewer reads too - and a findings table alone cannot show it.
+    """
+
+    __tablename__ = "detector_details"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    run_id: Mapped[int] = mapped_column(
+        ForeignKey("check_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    detector: Mapped[str] = mapped_column(String(64), nullable=False)
+    # e.g. "faculty_comparison", "photo_analysis"
+    kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("run_id", "kind", name="uq_detail_per_run_kind"),
+    )
+
+
+class FacultyMemberRow(Base):
+    """One person on a declared faculty list.
+
+    Kept as rows rather than inside a JSON blob because the cross-institution
+    check is a query: "who else declared this faculty id?"
+    """
+
+    __tablename__ = "faculty_members"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    document_id: Mapped[int] = mapped_column(
+        ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    run_id: Mapped[int] = mapped_column(
+        ForeignKey("check_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    institution_id: Mapped[int] = mapped_column(
+        ForeignKey("institutions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    faculty_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    name: Mapped[str] = mapped_column(String(256), nullable=False)
+    name_normalised: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
+    department: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    designation: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    qualification: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+
+class RiskAssessment(Base):
+    """A risk level computed for an application, kept as history.
+
+    Recomputed after every processing run and every review action, and never
+    edited: a reviewer must be able to see that an application moved from high
+    to low because a finding was dismissed, by whom, and under which weights.
+    The level orders the review queue. It decides nothing.
+    """
+
+    __tablename__ = "risk_assessments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    application_id: Mapped[int] = mapped_column(
+        ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    config_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    config_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    score: Mapped[float] = mapped_column(Float, nullable=False)
+    # low | medium | high
+    level: Mapped[str] = mapped_column(String(16), nullable=False)
+    subscores: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    # Every finding's contribution, so the number can be taken apart.
+    contributions: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    floors_applied: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    trigger: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor: Mapped[str] = mapped_column(String(256), nullable=False)
+    role: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class ApplicationCheck(Base):
+    """One pass of the application-level checks over a whole application.
+
+    Document runs answer questions about one file. These answer questions only
+    the set can: is every required document present, does the certificate name
+    the institution that is applying, do the declared faculty meet the
+    configured norms. Like runs, never overwritten: a new pass is a new row,
+    and the latest one is what the review queue reads.
+    """
+
+    __tablename__ = "application_checks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    application_id: Mapped[int] = mapped_column(
+        ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    config_version: Mapped[str | None] = mapped_column(String(64))
+    config_hash: Mapped[str | None] = mapped_column(String(64))
+    status: Mapped[str | None] = mapped_column(String(64))
+    payload: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    actor: Mapped[str] = mapped_column(String(256), nullable=False)
+    role: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    findings: Mapped[list[FindingRow]] = relationship(
+        back_populates="application_check", cascade="all, delete-orphan"
     )

@@ -22,3 +22,13 @@ data/store/
 # reproducible from config/eval_generation.yaml and the seed, so only the
 # generator code and the two config files are committed.
 data/eval/
+
+# Demo dataset binaries (python -m demo.generate). The mock AICTE records,
+# website snapshots and labels are small, deterministic and committed so the
+# faculty detector works on a fresh checkout; the certificates and photos are
+# regenerated in about a second.
+data/demo/applications/
+data/demo/evaluation.json
+
+# Frontend build output.
+frontend/dist/
