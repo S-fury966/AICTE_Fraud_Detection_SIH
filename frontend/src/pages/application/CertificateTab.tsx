@@ -1,7 +1,7 @@
 import { CheckCircle2, ExternalLink, FileSignature, Fingerprint, Link2, QrCode, ScanText, ShieldQuestion, XCircle } from 'lucide-react'
 import type React from 'react'
 import { Link } from 'react-router-dom'
-import { Card, CardHeader, cn, Empty, SecureImage, StageDot, VerificationBadge } from '../../components/ui'
+import { Card, CardHeader, cn, Empty, OfflineReaderBadge, SecureImage, StageDot, VerificationBadge } from '../../components/ui'
 import { fileUrl, openWithIdentity, previewUrl } from '../../lib/api'
 import { display, humanize, short } from '../../lib/format'
 import type { ApplicationReport, DocumentEntry, ExtractedField } from '../../lib/types'
@@ -25,6 +25,9 @@ function CertificateView({ doc }: { doc: DocumentEntry }) {
   if (!run) return <Empty title="Not processed yet" />
   const lookups = run.verification_lookups
   const status = run.stages.find((s) => s.stage === 'issuer_verification')?.detail_status
+  const fallback = (run.details?.field_extraction ?? null) as
+    | { fallback_used?: boolean; fallback_reason?: string | null; breaker_open?: boolean }
+    | null
 
   return (
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(280px,380px)_1fr]">
@@ -60,8 +63,11 @@ function CertificateView({ doc }: { doc: DocumentEntry }) {
               </li>
             ))}
           </ol>
-          <div className="mt-3 border-t border-slate-200/70 pt-2 text-[11px] text-slate-400">
-            Field reader: <span className="font-mono">{run.provider ?? '—'}</span> / {run.model_name ?? '—'} · prompt {run.prompt_version ?? '—'}
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200/70 pt-2 text-[11px] text-slate-400">
+            <span>Field reader: <span className="font-mono">{run.provider ?? '—'}</span> / {run.model_name ?? '—'} · prompt {run.prompt_version ?? '—'}</span>
+            {fallback?.fallback_used && (
+              <OfflineReaderBadge reason={fallback.fallback_reason} breakerOpen={fallback.breaker_open} />
+            )}
           </div>
         </Card>
       </div>

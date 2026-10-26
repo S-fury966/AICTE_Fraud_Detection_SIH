@@ -109,6 +109,18 @@ class AuditRecord:
     # are otherwise indistinguishable from a very consistent model.
     cache_hit: bool = False
 
+    # Which reader actually produced the fields, and - when it was not the
+    # configured primary - why. `provider` above is the same value (what
+    # answered); `provider_used` is spelled out so a reader of the audit does
+    # not have to know that. `fallback_reason` is a category plus a short
+    # message with no key, token or full URL in it.
+    provider_used: str | None = None
+    primary_provider: str | None = None
+    fallback_used: bool = False
+    fallback_category: str | None = None
+    fallback_reason: str | None = None
+    breaker_open: bool = False
+
 
 @dataclass
 class CertificateExtractionResult:

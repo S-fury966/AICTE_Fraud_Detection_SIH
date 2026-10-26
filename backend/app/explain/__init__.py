@@ -40,10 +40,58 @@ def contains_banned_term(text: str, cfg: dict[str, Any] | None = None) -> list[s
     return [t for t in terms if re.search(rf"\b{re.escape(t)}", lowered)]
 
 
+def fallback_summary(report: dict[str, Any]) -> dict[str, Any] | None:
+    """The offline-reader facts for an application, from its stored runs.
+
+    Scans each document's latest run for the `field_extraction` detail the
+    pipeline wrote. Returns the first one where the fallback was used, so the
+    report and the explanation can show it; None when every certificate was
+    read by the configured model. Reads only what is stored - it makes no
+    judgement and runs nothing.
+    """
+    for document in report.get("documents", []) or []:
+        runs = document.get("runs") or []
+        if not runs:
+            continue
+        detail = (runs[-1].get("details") or {}).get("field_extraction")
+        if isinstance(detail, dict) and detail.get("fallback_used"):
+            return {
+                "document_id": document.get("id"),
+                "provider_used": detail.get("provider_used"),
+                "primary_provider": detail.get("primary_provider"),
+                "fallback_used": True,
+                "fallback_category": detail.get("fallback_category"),
+                "fallback_reason": detail.get("fallback_reason"),
+                "breaker_open": bool(detail.get("breaker_open")),
+            }
+    return None
+
+
+def _fallback_note(fallback: dict[str, Any] | None) -> str | None:
+    """One plain line when the offline reader produced the certificate fields.
+
+    States what happened and that the values were still checked the same way,
+    so a reviewer does not read the degraded badge as a reliability doubt about
+    the findings themselves.
+    """
+    if not fallback or not fallback.get("fallback_used"):
+        return None
+    category = str(fallback.get("fallback_category") or "unavailable")
+    if category == "breaker_open":
+        why = "the AI provider was skipped after repeated connection failures"
+    else:
+        why = f"the AI provider was unavailable ({category.replace('_', ' ')})"
+    return (
+        f"Certificate fields were read by the offline reader because {why}. "
+        "Values were checked against the page text in the same way."
+    )
+
+
 def template_explanation(
     risk: dict[str, Any],
     findings: list[dict[str, Any]],
     cfg: dict[str, Any] | None = None,
+    fallback: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     cfg = cfg if cfg is not None else load_config(CONFIG_NAME)
     level = str(risk.get("level", "low"))
@@ -109,6 +157,9 @@ def template_explanation(
     notes = floors + (
         [f"{len(excluded)} finding(s) dismissed by a reviewer are not counted."] if excluded else []
     )
+    fallback_line = _fallback_note(fallback)
+    if fallback_line:
+        notes.append(fallback_line)
 
     return {
         "headline": headline,
@@ -125,10 +176,11 @@ def explain(
     findings: list[dict[str, Any]],
     cfg: dict[str, Any] | None = None,
     provider: Any | None = None,
+    fallback: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The template, optionally rewritten by an LLM that passes both guards."""
     cfg = cfg if cfg is not None else load_config(CONFIG_NAME)
-    base = template_explanation(risk, findings, cfg)
+    base = template_explanation(risk, findings, cfg, fallback=fallback)
     if not bool(get(cfg, "llm.enabled", False)) and provider is None:
         return base
 

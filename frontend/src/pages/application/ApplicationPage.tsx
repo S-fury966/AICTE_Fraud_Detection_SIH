@@ -2,7 +2,7 @@ import { ArrowLeft, Camera, ClipboardCheck, Download, FileCheck2, History, ListC
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { MeterRow, ScoreGauge } from '../../components/charts'
-import { Button, Card, CardHeader, ErrorBox, RiskBadge, Spinner, StrengthBadge, Tabs, VerificationBadge } from '../../components/ui'
+import { Button, Card, CardHeader, ErrorBox, OfflineReaderBadge, RiskBadge, Spinner, StrengthBadge, Tabs, VerificationBadge } from '../../components/ui'
 import { api, downloadWithIdentity } from '../../lib/api'
 import { DOCUMENT_TYPE_LABEL, formatDate, humanize } from '../../lib/format'
 import { useApi, useIdentity } from '../../lib/identity'
@@ -68,8 +68,14 @@ export default function ApplicationPage() {
         <div>
           <div className="label-xs">APP-{String(report.application.id).padStart(4, '0')} · {humanize(report.application.category)}</div>
           <h1 className="mt-1 font-display text-4xl font-light tracking-tight text-slate-900">{report.institution.name}</h1>
-          <div className="mt-1 text-xs text-slate-500">
-            Submitted {formatDate(report.application.created_at, true)} · {report.documents.length} documents · scored under <span className="font-mono">{risk.config_version}</span>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <span>Submitted {formatDate(report.application.created_at, true)} · {report.documents.length} documents · scored under <span className="font-mono">{risk.config_version}</span></span>
+            {report.field_extraction_fallback?.fallback_used && (
+              <OfflineReaderBadge
+                reason={report.field_extraction_fallback.fallback_reason}
+                breakerOpen={report.field_extraction_fallback.breaker_open}
+              />
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">

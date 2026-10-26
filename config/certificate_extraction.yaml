@@ -20,6 +20,33 @@ llm:
   # reading made by the fallback is never mistaken for a model's. Set to null
   # to make a missing key fail the stage instead.
   fallback_provider: rules
+  # Which provider-call failures the offline reader stands in for. Matched on
+  # the failure's category, not its message. Remove a category to make that
+  # failure hard-fail the stage instead of reading offline - the list is
+  # authoritative, nothing here is decorative.
+  #
+  # Not listed, and deliberately not governed by this list: a provider that
+  # cannot run at all - no key, or a request allowance of zero. The offline
+  # reader always stands in for those when it is configured, because that is
+  # the demo-without-a-key contract, not a transport decision.
+  fallback_on:
+    - timeout          # connection opened but no response in the read window
+    - connection_error # refused, reset or unresolved - the network is down
+    - server_error     # the endpoint returned 5xx
+    - rate_limited     # still 429 after the retry budget
+    - auth_rejected    # 401/403 - the key was refused
+    - model_or_endpoint_not_found  # 404 - wrong model or base_url
+    - other_transport  # any other non-200, or a reply that was not a completion
+  # When the network is down, every document would otherwise wait out a
+  # connection attempt before reading offline. After this many consecutive
+  # transport failures the primary is skipped for cool_down_seconds and the
+  # offline reader is used straight away; a later success closes it again. The
+  # audit records when a document skipped the primary for this reason. State is
+  # in memory, per process.
+  circuit_breaker:
+    enabled: true
+    consecutive_failures: 2
+    cool_down_seconds: 60
   # Attempts after the first one, when the response fails schema validation.
   max_retries: 1
   # Sampling temperature, passed to providers that accept it. 0 is as close to
@@ -48,6 +75,10 @@ llm:
       api_key_env: GROQ_API_KEY
       json_mode: true
       timeout_seconds: 60
+      # A separate, short connect timeout: a network that will not open a
+      # connection in this many seconds is down, and the offline reader should
+      # take over rather than the whole demo stalling on the full read window.
+      connect_timeout_seconds: 5
       rate_limit_retries: 3
       rate_limit_backoff_seconds: 2.0
     rules:

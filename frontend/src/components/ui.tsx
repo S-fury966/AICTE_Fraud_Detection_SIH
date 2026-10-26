@@ -1,5 +1,5 @@
 import { clsx } from 'clsx'
-import { ArrowUpRight, CircleDashed, Loader2, XCircle } from 'lucide-react'
+import { ArrowUpRight, CircleDashed, Loader2, WifiOff, XCircle } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { objectUrlWithIdentity } from '../lib/api'
 import { display, humanize } from '../lib/format'
@@ -200,6 +200,31 @@ const REVIEW_STYLE: Record<string, string> = {
 
 export function ReviewBadge({ status }: { status: string }) {
   return <span className={cn('whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide', REVIEW_STYLE[status] ?? REVIEW_STYLE.open)}>{humanize(status)}</span>
+}
+
+/** Shown when the offline reader, not the AI model, produced the certificate
+ *  fields. A warning tone, never a critical one: the reading is honest and was
+ *  checked the same way; it simply did not come from the model. The reason sits
+ *  in the tooltip so the badge itself stays short. */
+export function OfflineReaderBadge({
+  reason,
+  breakerOpen,
+}: {
+  reason?: string | null
+  breakerOpen?: boolean
+}) {
+  const tip = reason
+    ? `Fields read by the offline reader — ${reason}. Values were checked against the page text in the same way.`
+    : 'Fields read by the offline reader because the AI provider was unavailable. Values were checked against the page text in the same way.'
+  return (
+    <span
+      title={tip}
+      className="inline-flex cursor-help items-center gap-1.5 whitespace-nowrap rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-900 ring-1 ring-orange-200"
+    >
+      <WifiOff className="h-3 w-3" />
+      Offline reader{breakerOpen ? ' · skipped' : ''}
+    </span>
+  )
 }
 
 export function StageDot({ status }: { status: string }) {

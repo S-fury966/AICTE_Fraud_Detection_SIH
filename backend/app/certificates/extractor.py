@@ -15,6 +15,7 @@ from typing import Any
 
 from ..core.config import get, load_config
 from ..llm import (
+    FailureCategory,
     LLMCallError,
     LLMCompletion,
     LLMUnavailableError,
@@ -22,6 +23,7 @@ from ..llm import (
     load_prompt,
 )
 from ..llm.base import LLMProvider
+from ..llm.breaker import CircuitBreaker, configure_default, default_breaker
 from . import schema
 from .dates import parse_date
 from .models import (
@@ -35,6 +37,47 @@ from .models import (
 from .snippets import find_snippet, normalise
 
 CONFIG_NAME = "certificate_extraction"
+
+# The transport categories the offline reader stands in for unless config
+# removes one. `not_configured` and `zero_quota` are not here: they are the
+# original demo-without-a-key contract and always fall back when a reader is
+# configured, which is why `_should_fall_back` treats them separately.
+_DEFAULT_FALLBACK_ON = (
+    "timeout",
+    "connection_error",
+    "server_error",
+    "rate_limited",
+    "auth_rejected",
+    "model_or_endpoint_not_found",
+    "other_transport",
+)
+
+# Failures that mean the endpoint is unreachable, so repeated ones should open
+# the circuit breaker. A rejected key or a missing model is a configuration
+# fault, not an outage, and never trips it.
+_REACHABILITY_CATEGORIES = frozenset(
+    {
+        FailureCategory.TIMEOUT,
+        FailureCategory.CONNECTION_ERROR,
+        FailureCategory.SERVER_ERROR,
+        FailureCategory.RATE_LIMITED,
+        FailureCategory.OTHER_TRANSPORT,
+    }
+)
+
+
+def _should_fall_back(category: FailureCategory, fallback_on: set[str]) -> bool:
+    """Whether the offline reader stands in for a failure of this category.
+
+    A provider that cannot run at all - no key, no request allowance - always
+    falls back when a reader is configured: that is the demo-without-a-key
+    contract and is not something the `fallback_on` list is meant to switch
+    off. Every transport category is governed by the list, so removing one
+    (say `auth_rejected`) genuinely makes that failure hard-fail.
+    """
+    if category in (FailureCategory.NOT_CONFIGURED, FailureCategory.ZERO_QUOTA):
+        return True
+    return category.value in fallback_on
 
 _REPAIR_INSTRUCTION = """
 
@@ -55,11 +98,18 @@ def extract_certificate_fields(
     config: dict[str, Any] | None = None,
     provider: LLMProvider | None = None,
     source_path: str | None = None,
+    breaker: CircuitBreaker | None = None,
 ) -> CertificateExtractionResult:
     """Extract certificate fields from per-page text.
 
     `pages` is either {page_number: text} or the `pages` list of a step 1
     DocumentResult. `config` and `provider` are injectable for tests.
+
+    When no `provider` is injected the primary comes from config, and if it
+    cannot answer - unreachable, rate limited, rejected - the configured
+    offline reader stands in, governed by `llm.fallback_on`. An injected
+    provider is a caller's explicit choice and is never swapped. `breaker` is
+    injectable so a test can drive the circuit breaker with its own clock.
     """
     cfg = config if config is not None else load_config(CONFIG_NAME)
     page_text = _normalise_pages(pages)
@@ -71,38 +121,87 @@ def extract_certificate_fields(
     document_text = _assemble_document_text(page_text)
     rendered = prompt.render(DOCUMENT_TEXT=document_text)
 
+    # Fallback / breaker bookkeeping, carried into the audit so a stored run
+    # says plainly which reader produced the fields and why.
     configured_provider = provider is None
+    primary_name: str | None = None
+    using_fallback = False
+    fallback_used = False
+    fallback_category: str | None = None
     fallback_reason: str | None = None
-    if provider is None:
-        provider_name = str(get(cfg, "llm.provider", "groq"))
-        settings = dict(get(cfg, f"llm.providers.{provider_name}", {}) or {})
+    breaker_open = False
+
+    fallback_on = {str(c) for c in (get(cfg, "llm.fallback_on", _DEFAULT_FALLBACK_ON) or [])}
+    breaker_cfg = get(cfg, "llm.circuit_breaker", {}) or {}
+    breaker_enabled = bool(breaker_cfg.get("enabled", True))
+    if breaker is None:
+        configure_default(
+            int(breaker_cfg.get("consecutive_failures", 2)),
+            float(breaker_cfg.get("cool_down_seconds", 60)),
+        )
+        breaker = default_breaker()
+
+    if configured_provider:
+        primary_name = str(get(cfg, "llm.provider", "groq"))
+        settings = dict(get(cfg, f"llm.providers.{primary_name}", {}) or {})
         # Carried through for providers that accept sampling parameters.
         # A provider whose API rejects it is free to drop it.
         settings.setdefault("temperature", get(cfg, "llm.temperature", 0))
-        try:
-            provider = get_provider(provider_name, settings)
-            is_configured = getattr(provider, "is_configured", None)
-            if callable(is_configured) and not is_configured():
-                raise LLMUnavailableError(
-                    f"provider {provider_name!r} has no API key configured"
+
+        # The breaker: if recent calls to the primary all failed to connect,
+        # skip it for this document and read offline straight away, rather than
+        # paying the connect wait again. Recorded in the audit.
+        if breaker_enabled and breaker.is_open(primary_name):
+            fallback = _fallback_provider(cfg, primary_name)
+            if fallback is not None:
+                provider = fallback
+                using_fallback = True
+                fallback_used = True
+                breaker_open = True
+                fallback_category = "breaker_open"
+                fallback_reason = (
+                    f"breaker_open: {primary_name} skipped after repeated "
+                    "transport failures; read offline"
                 )
-        except LLMUnavailableError as exc:
-            # A configured offline fallback (the label reader) keeps a demo
-            # working without a key. Its output passes the same snippet guard,
-            # and the provider name it records says it was not the model.
-            provider = _fallback_provider(cfg, provider_name)
-            fallback_reason = str(exc)
-            if provider is None:
-                return _failed_result(
-                    source_path,
-                    cfg,
-                    prompt.prompt_version,
-                    document_text,
-                    provider_name,
-                    "unknown",
-                    FieldExtractionStatus.PROVIDER_UNAVAILABLE,
-                    str(exc),
+
+        if provider is None:
+            try:
+                provider = get_provider(primary_name, settings)
+                is_configured = getattr(provider, "is_configured", None)
+                if callable(is_configured) and not is_configured():
+                    raise LLMUnavailableError(
+                        f"provider {primary_name!r} has no API key configured",
+                        category=FailureCategory.NOT_CONFIGURED,
+                        sanitized=f"{primary_name} has no API key configured",
+                    )
+            except LLMUnavailableError as exc:
+                category = getattr(exc, "category", FailureCategory.NOT_CONFIGURED)
+                fallback = (
+                    _fallback_provider(cfg, primary_name)
+                    if _should_fall_back(category, fallback_on)
+                    else None
                 )
+                if fallback is None:
+                    return _failed_result(
+                        source_path,
+                        cfg,
+                        prompt.prompt_version,
+                        document_text,
+                        primary_name,
+                        "unknown",
+                        FieldExtractionStatus.PROVIDER_UNAVAILABLE,
+                        str(exc),
+                        primary_provider=primary_name,
+                        fallback_category=category.value,
+                    )
+                # The offline reader keeps a demo working: same JSON contract,
+                # same snippet guard, and the recorded provider says it was not
+                # the model.
+                provider = fallback
+                using_fallback = True
+                fallback_used = True
+                fallback_category = category.value
+                fallback_reason = f"{category.value}: {getattr(exc, 'sanitized', category.value)}"
 
     max_retries = int(get(cfg, "llm.max_retries", 1))
     raw_responses: list[str] = []
@@ -114,35 +213,51 @@ def extract_certificate_fields(
 
     for attempt in range(max_retries + 1):
         attempts = attempt + 1
+        on_primary = configured_provider and not using_fallback
         try:
             completion = provider.complete(current_prompt)
-        except LLMUnavailableError as exc:
-            # A provider can also turn out to be unavailable only when called
-            # (a quota of zero). Swap to the fallback once, for a configured
-            # provider only - an injected one is a test's explicit choice.
-            alternative = (
-                _fallback_provider(cfg, getattr(provider, "name", ""))
-                if configured_provider and fallback_reason is None
-                else None
-            )
-            if alternative is not None:
-                provider = alternative
-                fallback_reason = str(exc)
-                continue
-            return _failed_result(
-                source_path,
-                cfg,
-                prompt.prompt_version,
-                document_text,
-                getattr(provider, "name", "unknown"),
-                getattr(provider, "model", "unknown"),
-                FieldExtractionStatus.PROVIDER_UNAVAILABLE,
-                str(exc),
-                attempts=attempts,
-                raw_responses=raw_responses,
-                schema_errors=schema_errors,
-            )
-        except LLMCallError as exc:
+        except (LLMUnavailableError, LLMCallError) as exc:
+            category = getattr(exc, "category", FailureCategory.OTHER_TRANSPORT)
+            # A primary that cannot be reached counts toward opening the breaker
+            # for the documents that follow.
+            if on_primary and breaker_enabled and category in _REACHABILITY_CATEGORIES:
+                breaker.record_failure(primary_name)
+            # Hand over to the offline reader, once, when the category is one
+            # the fallback covers. Not for an injected provider or a fallback
+            # that itself failed.
+            if on_primary and _should_fall_back(category, fallback_on):
+                fallback = _fallback_provider(cfg, primary_name)
+                if fallback is not None:
+                    provider = fallback
+                    using_fallback = True
+                    fallback_used = True
+                    fallback_category = category.value
+                    fallback_reason = (
+                        f"{category.value}: {getattr(exc, 'sanitized', category.value)}"
+                    )
+                    # Drop any repair instruction; the fallback gets the plain
+                    # prompt and does not consume the primary's retries.
+                    current_prompt = rendered
+                    continue
+            if isinstance(exc, LLMUnavailableError):
+                return _failed_result(
+                    source_path,
+                    cfg,
+                    prompt.prompt_version,
+                    document_text,
+                    getattr(provider, "name", "unknown"),
+                    getattr(provider, "model", "unknown"),
+                    FieldExtractionStatus.PROVIDER_UNAVAILABLE,
+                    str(exc),
+                    attempts=attempts,
+                    raw_responses=raw_responses,
+                    schema_errors=schema_errors,
+                    primary_provider=primary_name,
+                    fallback_used=fallback_used,
+                    fallback_reason=fallback_reason,
+                    fallback_category=fallback_category,
+                    breaker_open=breaker_open,
+                )
             schema_errors.append([f"provider call failed: {exc}"])
             if attempt >= max_retries:
                 return _failed_result(
@@ -157,8 +272,17 @@ def extract_certificate_fields(
                     attempts=attempts,
                     raw_responses=raw_responses,
                     schema_errors=schema_errors,
+                    primary_provider=primary_name,
+                    fallback_used=fallback_used,
+                    fallback_reason=fallback_reason,
+                    fallback_category=fallback_category,
+                    breaker_open=breaker_open,
                 )
             continue
+
+        if on_primary and breaker_enabled:
+            # A call that reached the primary closes the breaker.
+            breaker.record_success(primary_name)
 
         raw_responses.append(completion.text)
 
@@ -188,6 +312,11 @@ def extract_certificate_fields(
         raw_responses=raw_responses,
         schema_errors=schema_errors,
         completion=completion,
+        primary_provider=primary_name,
+        fallback_used=fallback_used,
+        fallback_reason=fallback_reason,
+        fallback_category=fallback_category,
+        breaker_open=breaker_open,
     )
 
     if payload is None:
@@ -456,6 +585,11 @@ def _build_audit(
     raw_responses: list[str],
     schema_errors: list[list[str]],
     completion: LLMCompletion | None = None,
+    primary_provider: str | None = None,
+    fallback_used: bool = False,
+    fallback_reason: str | None = None,
+    fallback_category: str | None = None,
+    breaker_open: bool = False,
 ) -> AuditRecord:
     include_raw = bool(get(cfg, "output.include_raw_responses", True))
     return AuditRecord(
@@ -475,6 +609,12 @@ def _build_audit(
         cache_hit=bool(
             (completion.metadata or {}).get("cache_hit") if completion else False
         ),
+        provider_used=provider_name,
+        primary_provider=primary_provider,
+        fallback_used=fallback_used,
+        fallback_category=fallback_category,
+        fallback_reason=fallback_reason,
+        breaker_open=breaker_open,
     )
 
 
@@ -490,6 +630,11 @@ def _failed_result(
     attempts: int = 0,
     raw_responses: list[str] | None = None,
     schema_errors: list[list[str]] | None = None,
+    primary_provider: str | None = None,
+    fallback_used: bool = False,
+    fallback_reason: str | None = None,
+    fallback_category: str | None = None,
+    breaker_open: bool = False,
 ) -> CertificateExtractionResult:
     return CertificateExtractionResult(
         source_path=source_path,
@@ -504,6 +649,11 @@ def _failed_result(
             attempts=attempts,
             raw_responses=raw_responses or [],
             schema_errors=schema_errors or [],
+            primary_provider=primary_provider,
+            fallback_used=fallback_used,
+            fallback_reason=fallback_reason,
+            fallback_category=fallback_category,
+            breaker_open=breaker_open,
         ),
         error=error,
     )

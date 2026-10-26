@@ -43,7 +43,7 @@ from ..db.models import (
     Institution,
     QRDetectionRow,
 )
-from ..explain import explain
+from ..explain import explain, fallback_summary
 from ..pipeline.runner import ensure_application
 from ..scoring import assess_application, latest_assessment
 from ..scoring.risk import latest_findings_for_application, score_findings
@@ -162,7 +162,7 @@ def register_extras(app: FastAPI, svc: Service) -> None:
             findings = latest_findings_for_application(session, application_id)
             risk = score_findings(findings)
             chain = audit_log.verify_chain(session)
-            explanation = explain(risk, findings)
+            explanation = explain(risk, findings, fallback=fallback_summary(report))
             pdf = build_scrutiny_note(report, findings, risk, explanation, identity, chain.ok)
             audit_log.append(
                 session, actor=identity.actor, role=identity.role, action="scrutiny_note_exported",

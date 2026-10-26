@@ -26,26 +26,30 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from . import world
-from .load import make_pipeline, run_scenarios
+from .load import DatasetNotFound, ensure_demo_dataset, make_pipeline, run_scenarios
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 _RANK = {"weak": 1, "medium": 2, "strong": 3}
 
 
 def evaluate(data_dir: Path) -> dict[str, Any]:
+    from app.db.engine import temporary_sqlite_database
     from app.scoring import latest_findings_for_application
 
-    labels = json.loads((data_dir / "labels.json").read_text(encoding="utf-8"))
-    with tempfile.TemporaryDirectory() as scratch:
-        url = f"sqlite:///{Path(scratch) / 'evaluation.db'}"
-        pipeline = make_pipeline(url)
+    # Names the first missing file if the dataset is absent or incomplete,
+    # rather than letting a FileNotFoundError surface later from inside the
+    # pipeline - where, on Windows, the temp-dir cleanup would bury it.
+    labels = ensure_demo_dataset(data_dir)
+    # The engine is disposed before the temp directory is removed, so the
+    # cleanup cannot fail on an open SQLite file and mask a real error.
+    with temporary_sqlite_database(name="evaluation.db") as database:
+        pipeline = make_pipeline(database=database)
         started = time.perf_counter()
         results = run_scenarios(pipeline, data_dir)
         wall = time.perf_counter() - started
@@ -54,7 +58,6 @@ def evaluate(data_dir: Path) -> dict[str, Any]:
         with pipeline.database.session() as session:
             for row in results:
                 findings_by_app[row["key"]] = latest_findings_for_application(session, row["application_id"])
-        pipeline.database.dispose()
 
     by_key = {row["key"]: row for row in results}
     per_type: dict[str, dict[str, Any]] = {}
@@ -135,6 +138,14 @@ def evaluate(data_dir: Path) -> dict[str, Any]:
             "avg_seconds_per_application": round(sum(r["seconds"] for r in results) / max(1, len(results)), 3),
             "avg_seconds_per_document": round(sum(r["seconds"] for r in results) / max(1, documents), 3),
         },
+        # Which reader produced the certificate fields, so a run says plainly
+        # whether the numbers came from the model or the offline reader.
+        "field_extraction": {
+            "documents_via_offline_reader": sum(r.get("fallback_documents", 0) for r in results),
+            "applications_via_offline_reader": sum(
+                1 for r in results if r.get("fallback_documents", 0)
+            ),
+        },
         "cases": cases,
         "caveat": (
             "Ten synthetic applications built to demonstrate each detector. "
@@ -150,11 +161,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--data", default=str(REPO_ROOT / "data" / "demo"))
     parser.add_argument("--out", default=str(REPO_ROOT / "data" / "demo" / "evaluation.json"))
     args = parser.parse_args(argv)
-    report = evaluate(Path(args.data))
+    try:
+        report = evaluate(Path(args.data))
+    except DatasetNotFound as exc:
+        print(exc, file=sys.stderr)
+        return 1
     Path(args.out).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     summary = {k: report[k] for k in ("overall_detection_rate", "prioritisation", "timing")}
     summary["per_fraud_type"] = {k: v["detection_rate"] for k, v in report["per_fraud_type"].items()}
     summary["false_positives"] = {k: v for k, v in report["false_positives"].items() if k != "detail"}
+    summary["field_extraction"] = report["field_extraction"]
     print(json.dumps(summary, indent=2))
     return 0
 

@@ -44,7 +44,7 @@ from ..db.models import (
     ReviewAction,
     StageResult,
 )
-from ..explain import explain
+from ..explain import explain, fallback_summary
 from ..pipeline.runner import ensure_application
 from ..scoring import assess_application, assessment_history, latest_assessment, score_findings
 from ..scoring.risk import latest_findings_for_application
@@ -276,7 +276,9 @@ def create_app(service: Service | None = None) -> FastAPI:
             risk = _current_risk(session, application_id)
             report["risk"] = risk
             report["risk_history"] = assessment_history(session, application_id)
-            report["explanation"] = explain(risk, findings)
+            fallback = fallback_summary(report)
+            report["field_extraction_fallback"] = fallback
+            report["explanation"] = explain(risk, findings, fallback=fallback)
             report["document_summaries"] = [
                 _document_summary(svc, document) for document in report["documents"]
             ]

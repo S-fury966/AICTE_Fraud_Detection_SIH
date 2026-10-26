@@ -231,6 +231,16 @@ export interface ApplicationCheck {
   norms?: any
 }
 
+export interface FieldExtractionFallback {
+  document_id: number | null
+  provider_used: string | null
+  primary_provider: string | null
+  fallback_used: boolean
+  fallback_category: string | null
+  fallback_reason: string | null
+  breaker_open: boolean
+}
+
 export interface ApplicationReport {
   application: { id: number; category: string; created_at: string }
   application_check: ApplicationCheck | null
@@ -239,6 +249,7 @@ export interface ApplicationReport {
   risk: Risk
   risk_history: { id: number; score: number; level: RiskLevel; trigger: string; actor: string; role: string; config_version: string; created_at: string }[]
   explanation: Explanation
+  field_extraction_fallback: FieldExtractionFallback | null
   document_summaries: DocumentSummary[]
 }
 

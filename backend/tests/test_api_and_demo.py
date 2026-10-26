@@ -217,29 +217,123 @@ def test_upload_rejects_unknown_types_and_extensions(client):
     assert response.status_code == 400
 
 
-def test_demo_evaluation_detects_every_injected_type_without_network(demo_dir, monkeypatch):
-    from demo import evaluate as evaluation
-    from demo import load as loader
+def _clear_provider_keys(monkeypatch):
+    """Remove every configured provider's API key from the environment.
 
-    def refuse(*args, **kwargs):
-        raise AssertionError("network access attempted during the evaluation")
+    The result does not depend on whether this machine happens to have a key
+    in .env: with none present, the field stage reads offline through the same
+    snippet guard. conftest loads .env for the live tests, so an offline test
+    must clear the keys for itself.
+    """
+    llm = load_config("certificate_extraction").get("llm", {}) or {}
+    for settings in (llm.get("providers", {}) or {}).values():
+        env = (settings or {}).get("api_key_env")
+        if env:
+            monkeypatch.delenv(env, raising=False)
 
-    monkeypatch.setattr(socket.socket, "connect", refuse)
+
+_LOOPBACK = {"127.0.0.1", "::1", "localhost"}
+
+
+def _block_external_network(monkeypatch):
+    """Block every outbound connection except loopback.
+
+    The demo evaluation runs the whole pipeline, and the mock issuer runs
+    in-process through Starlette's TestClient - which, on Windows with httpx2,
+    opens a real loopback socket. Blocking loopback too would break the
+    in-process issuer and prove nothing about external calls. So loopback is
+    allowed and everything else raises; the field-extraction fallback path, the
+    thing under test, makes no outbound call at all and is unaffected either
+    way.
+    """
+    import socket as socket_module
+
+    real_connect = socket_module.socket.connect
+
+    def guarded_connect(self, address, *args, **kwargs):
+        host = address[0] if isinstance(address, (tuple, list)) and address else address
+        if host not in _LOOPBACK:
+            raise AssertionError(f"external network access attempted to {address}")
+        return real_connect(self, address, *args, **kwargs)
+
+    monkeypatch.setattr(socket_module.socket, "connect", guarded_connect)
+
+
+def _demo_pipeline_factory(loader, demo_dir):
     original = loader.make_pipeline
 
-    def pipeline_with_demo_sources(url=None):
-        pipeline = original(url)
+    # Mirror make_pipeline's real signature (url + database), so evaluate() may
+    # hand it the temporary-database Database it now owns.
+    def pipeline_with_demo_sources(url=None, database=None):
+        pipeline = original(url, database=database)
         pipeline.configs["faculty_checks"] = copy.deepcopy(pipeline.configs["faculty_checks"])
         pipeline.configs["faculty_checks"]["sources"]["aicte_records_path"] = str(demo_dir / "aicte_records.json")
         pipeline.configs["faculty_checks"]["sources"]["website_snapshot_dir"] = str(demo_dir / "websites")
         return pipeline
 
-    monkeypatch.setattr(evaluation, "make_pipeline", pipeline_with_demo_sources)
+    return pipeline_with_demo_sources
+
+
+def test_demo_evaluation_detects_every_injected_type_offline_with_no_key(demo_dir, monkeypatch):
+    """Offline, no provider key: the field stage reads offline and every
+    injected type is still detected.
+
+    The environment is controlled explicitly - all provider keys are cleared -
+    so the result is the same whether or not this machine has a key in .env.
+    """
+    from demo import evaluate as evaluation
+    from demo import load as loader
+
+    _clear_provider_keys(monkeypatch)
+    _block_external_network(monkeypatch)
+    monkeypatch.setattr(evaluation, "make_pipeline", _demo_pipeline_factory(loader, demo_dir))
     report = evaluation.evaluate(demo_dir)
     assert report["overall_detection_rate"] == 1.0, json.dumps(report["per_fraud_type"], indent=1)
     assert report["false_positives"]["clean_with_medium_or_strong_finding"] == 0
     assert report["false_positives"]["clean_not_low_priority"] == 0
     assert report["honest_flags_expected"]["raised"] == report["honest_flags_expected"]["count"]
+    # Offline by construction: no key present, so every certificate was read by
+    # the offline reader.
+    assert report["field_extraction"]["documents_via_offline_reader"] >= 1
+
+
+def test_demo_evaluation_with_a_fake_key_and_no_network_uses_the_fallback(demo_dir, monkeypatch):
+    """A key is present but the network is down - the Windows demo scenario.
+
+    This is the case that used to drop to 8/11: with a key set, the primary was
+    attempted, the socket trap turned the call into a transport failure, and
+    before the fix that hard-failed the field stage. Now the offline reader
+    stands in and detection is back to 11/11 with no false positives.
+    """
+    from app.llm.breaker import default_breaker
+    from demo import evaluate as evaluation
+    from demo import load as loader
+
+    # A made-up key, never a real one. It should never appear in any stored
+    # output; the point is only that a key being *present* no longer breaks the
+    # offline path.
+    fake = "sk-fake-eval-key-DO-NOT-USE-0000000000"
+    monkeypatch.setenv("GROQ_API_KEY", fake)
+    # A fresh breaker so state from another test cannot pre-open or mask it.
+    monkeypatch.setattr("app.certificates.extractor.default_breaker", lambda: _FreshBreaker())
+    _block_external_network(monkeypatch)
+    monkeypatch.setattr(evaluation, "make_pipeline", _demo_pipeline_factory(loader, demo_dir))
+    report = evaluation.evaluate(demo_dir)
+
+    assert report["overall_detection_rate"] == 1.0, json.dumps(report["per_fraud_type"], indent=1)
+    assert report["false_positives"]["clean_with_medium_or_strong_finding"] == 0
+    assert report["false_positives"]["clean_not_low_priority"] == 0
+    # The key was present but the provider was unreachable, so the offline
+    # reader produced every certificate's fields.
+    assert report["field_extraction"]["documents_via_offline_reader"] >= 1
+    # The fake key must not have leaked anywhere into the report.
+    assert fake not in json.dumps(report)
+
+
+def _FreshBreaker():
+    from app.llm.breaker import CircuitBreaker
+
+    return CircuitBreaker(threshold=2, cool_down_seconds=60)
 
 
 # --------------------------------------------------------------------------

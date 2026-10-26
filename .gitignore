@@ -29,6 +29,7 @@ data/eval/
 # regenerated in about a second.
 data/demo/applications/
 data/demo/evaluation.json
+data/demo/logs/
 
 # Frontend build output.
 frontend/dist/

@@ -51,6 +51,23 @@ python3.12 -m venv .venv                    # any Python 3.10–3.12 (see Requir
 ./run_demo.sh
 ```
 
+**Windows (PowerShell):**
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\pip install -r backend\requirements.txt
+cd frontend; npm install; cd ..
+powershell -ExecutionPolicy Bypass -File .\run_demo.ps1
+```
+
+The `-ExecutionPolicy Bypass` flag is per-invocation and does not change your
+machine's policy. Switches: `-ApiPort 8800` (also honours `API_PORT`),
+`-SkipGenerate` / `-SkipEvaluate` for faster repeat runs,
+`-Offline` to force the offline reader for this run only (the `.env` file is
+not touched), `-CheckOnly` to run preflight and exit. If preflight fails it
+prints what to fix (venv missing, wrong Python, missing packages, port busy,
+Node too old).
+
 Open **http://localhost:5175**. The script generates the synthetic dataset, runs
 all eleven demo applications through the real pipeline into a fresh database,
 measures detection and false positives, and starts the API (`127.0.0.1:8765`)
@@ -59,7 +76,11 @@ and the dashboard.
 **No API key is needed.** Without one, certificate fields are read by an offline
 label reader that returns the same contract as the model and passes the same
 evidence checks. With a free Groq key in `.env` (`GROQ_API_KEY=...`), the LLM is
-used instead.
+used instead — and if the key is set but the provider cannot be reached (no
+network, a timeout, a rejected key), the offline reader still takes over rather
+than failing the check. When it does, the certificate shows a small **"Offline
+reader"** badge, with the reason in its tooltip; the reading is honest and was
+checked the same way, it simply did not come from the model.
 
 **Roles.** You start as a scrutiny officer, who reviews findings and submits
 applications. The audit trail and re-runs need a senior role: pick it in the
@@ -85,6 +106,11 @@ cd backend
 
 cd ../frontend && npm run dev                 # dashboard on localhost:5175
 ```
+
+If `demo.evaluate` (or `demo.load`, or `evaluation.run`) says the generated
+data was not found, run `python -m demo.generate` first (`python -m
+evaluation.generate` for the evaluation set) — the generated files are
+gitignored output, not shipped.
 
 **Requirements.** Python **3.10–3.12** — a hard limit, because
 `rapidocr-onnxruntime` declares `Requires-Python <3.13`. Node 20+.

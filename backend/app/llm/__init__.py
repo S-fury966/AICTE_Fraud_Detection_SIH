@@ -1,6 +1,8 @@
 from .base import (
+    FailureCategory,
     LLMCallError,
     LLMCompletion,
+    LLMError,
     LLMProvider,
     LLMUnavailableError,
 )
@@ -10,8 +12,10 @@ from .registry import available_providers, get_provider
 from .stub_provider import StubProvider
 
 __all__ = [
+    "FailureCategory",
     "LLMCallError",
     "LLMCompletion",
+    "LLMError",
     "LLMProvider",
     "LLMUnavailableError",
     "OpenAICompatibleProvider",

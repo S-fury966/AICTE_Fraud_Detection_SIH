@@ -70,17 +70,41 @@ class RunContext:
 # --------------------------------------------------------------------------
 
 
+_GENERATE_HINT = "Run: python -m evaluation.generate"
+
+
+class DatasetNotFound(RuntimeError):
+    """The generated evaluation dataset is missing or incomplete.
+
+    Its message ends in the generate hint, so the CLI can print it and exit
+    without a traceback - the dataset is gitignored output, and its absence is
+    a step not yet run rather than a bug.
+    """
+
+
 def load_dataset(out_root: Path, generation_config: dict[str, Any]) -> tuple[list, dict]:
     labels_path = out_root / str(get(generation_config, "output.labels", "labels.json"))
     manifest_path = out_root / str(
         get(generation_config, "output.manifest", "manifest.json")
     )
     if not labels_path.exists() or not manifest_path.exists():
-        raise FileNotFoundError(
-            f"no dataset at {out_root}. Run `python -m evaluation.generate` first."
+        missing = labels_path if not labels_path.exists() else manifest_path
+        raise DatasetNotFound(
+            f"Generated evaluation data not found at {out_root} "
+            f"(missing {missing.name}). {_GENERATE_HINT}"
         )
     labels = json.loads(labels_path.read_text(encoding="utf-8"))
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # A partially generated set (metadata present, a document gone) gets a
+    # message naming the first missing file, not a bare FileNotFoundError from
+    # inside the pipeline.
+    for entry in labels:
+        document = entry.get("document")
+        if document and not (out_root / document).is_file():
+            raise DatasetNotFound(
+                f"Generated evaluation data at {out_root} is incomplete: "
+                f"missing {document}. {_GENERATE_HINT}"
+            )
     return labels, manifest
 
 
@@ -759,7 +783,11 @@ def main(argv: list[str] | None = None) -> int:
         else _repo_root() / str(get(generation_config, "output.root", "data/eval"))
     )
 
-    labels, manifest = load_dataset(out_root, generation_config)
+    try:
+        labels, manifest = load_dataset(out_root, generation_config)
+    except DatasetNotFound as exc:
+        print(exc, file=sys.stderr)
+        return 1
 
     context = RunContext(
         mode=mode,

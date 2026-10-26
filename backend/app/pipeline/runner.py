@@ -531,11 +531,17 @@ class Pipeline:
             )
 
         detail = payload.get("status")
+        audit = payload.get("audit") or {}
+        fallback_used = bool(audit.get("fallback_used"))
         status = {
             "ok": STAGE_OK,
             "extraction_failed": STAGE_FAILED,
             "provider_unavailable": STAGE_DEGRADED,
         }.get(str(detail), STAGE_DEGRADED)
+        # A reading the offline reader produced is honest but not the model's,
+        # so the stage is degraded even though extraction succeeded.
+        if status == STAGE_OK and fallback_used:
+            status = STAGE_DEGRADED
 
         store_raw = bool(get(self.persistence, "runs.store_raw_llm_responses", True))
         with self.database.session() as session:
@@ -547,6 +553,31 @@ class Pipeline:
                         run_id,
                         (payload.get("audit") or {}).get("raw_responses") or [],
                     )
+                # The fallback facts, where the report and the badge read them.
+                # Written whenever a reading was produced, so the common case
+                # (primary answered) is visible as fallback_used=false too.
+                if payload.get("fields") is not None or fallback_used:
+                    repository.save_detector_detail(
+                        session,
+                        run_id,
+                        str(
+                            get(
+                                self.persistence,
+                                "pipeline.detector_name",
+                                "certificate_authenticity",
+                            )
+                        ),
+                        "field_extraction",
+                        {
+                            "provider_used": audit.get("provider_used"),
+                            "primary_provider": audit.get("primary_provider"),
+                            "fallback_used": fallback_used,
+                            "fallback_category": audit.get("fallback_category"),
+                            "fallback_reason": audit.get("fallback_reason"),
+                            "breaker_open": bool(audit.get("breaker_open")),
+                            "model": audit.get("model"),
+                        },
+                    )
 
         outcome = self._record_stage(
             run_id,
@@ -555,11 +586,17 @@ class Pipeline:
             actor,
             role,
             detail_status=str(detail) if detail else None,
-            reason=payload.get("error"),
+            reason=payload.get("error")
+            or (fallback_used and audit.get("fallback_reason"))
+            or None,
             duration_ms=(time.perf_counter() - started) * 1000,
             details={
                 "field_count": len(payload.get("fields") or {}),
                 "missing_fields": payload.get("missing_fields"),
+                "provider_used": audit.get("provider_used"),
+                "fallback_used": fallback_used,
+                "fallback_category": audit.get("fallback_category"),
+                "breaker_open": bool(audit.get("breaker_open")),
             },
         )
         outcome.payload = payload

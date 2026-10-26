@@ -201,11 +201,52 @@ run five photo stages; everything else runs the six certificate stages. One run
 per document either way, and `Pipeline.rerun_document()` adds a new run to an
 existing document — never edits an old one.
 
-**Offline field reader.** With no API key the step 2 provider falls back to
-`rules` (`llm.fallback_provider`), a label reader returning the same JSON
-contract. Its values pass the same snippet guard, and the run records
-`provider: rules`, so a fallback reading is never mistaken for a model's. Set the
-fallback to null to make a missing key fail the stage instead.
+**Offline field reader.** The step 2 provider falls back to `rules`
+(`llm.fallback_provider`), a label reader returning the same JSON contract. Its
+values pass the same snippet guard, and the run records `provider: rules` (the
+`check_runs.provider` column and the dashboard's "Field reader" both show what
+actually answered, never the primary), so a fallback reading is never mistaken
+for a model's. Set the fallback to null to make a failure hard-fail the stage
+instead.
+
+**The fallback covers an unreachable provider, not only a missing key.** A
+configured provider that times out, refuses the connection, returns 5xx, stays
+rate-limited, rejects the key (401/403) or has no such model/endpoint (404)
+raises a categorised error, and the offline reader stands in. `llm.fallback_on`
+lists the transport categories it covers and is **authoritative**: remove
+`auth_rejected` (or any other) and that failure hard-fails the stage instead of
+reading offline — a test pins this. A missing key and a zero request allowance
+are not in that list; they always fall back when a reader is configured,
+because that is the demo-without-a-key contract, not a transport decision.
+*Explicitly not a fallback trigger:* schema-invalid model output. That is a
+model-behaviour problem and keeps its existing retry-then-`extraction_failed`
+path (also pinned by a test). A categorised error carries a sanitised message —
+category plus a short line with no key, token or full URL — and the key is
+scrubbed from the ordinary message too.
+
+**A circuit breaker keeps a down network from slowing the whole run.** A short,
+separate connect timeout (`connect_timeout_seconds`, default 5) means a dead
+endpoint fails fast; after `circuit_breaker.consecutive_failures` (default 2)
+consecutive transport failures the primary is skipped for `cool_down_seconds`
+(default 60) and the offline reader is used straight away, so only the first
+document or two pay the connect wait. A reaching call closes it. State is in
+memory per process (`app/llm/breaker.py`), the clock is injectable for tests,
+and the audit records when a document skipped the primary because the breaker
+was open. A rejected key or missing model does not trip it — that is a
+configuration fault, not an outage.
+
+**A fallback reading degrades the stage, and is labelled, but does not change
+scoring.** The `certificate_fields` stage is `degraded` (not `ok`) when the
+offline reader produced the fields. The extraction audit and the
+`field_extraction` detector-detail carry `provider_used`, `primary_provider`,
+`fallback_used`, `fallback_category`, `fallback_reason` and `breaker_open`; the
+report and API surface them, the dashboard shows an "Offline reader" badge with
+the reason in a tooltip (Certificate tab and application header), and the
+explanation gains one plain note line. Scoring reads findings, which come from
+the validated values, so a fallback run and a model run of the same content
+produce identical findings and the same score — pinned by a test. No schema
+change: the metadata rides in the existing `detector_details` JSON and the
+audit.
 
 **Risk scoring is additive only.** Points come from findings; a verified lookup,
 an intact signature or the absence of findings adds zero and nothing subtracts.
@@ -222,6 +263,30 @@ discarded if it contains a banned term or a number absent from the template.
 `system` role refused, permissions per action in `config/api.yaml`, report reads
 and file views audited. One application at a time behind a process lock.
 Ports 8765/5175 because 8000/5173 are commonly taken on a dev machine.
+
+**A SQLite database in a temp directory is disposed before the directory is
+removed** — via `app/db/engine.temporary_sqlite_database`, the one helper that
+owns the pattern (`demo.evaluate` uses it). On Windows an open SQLite file
+blocks its own directory delete, and the resulting `NotADirectoryError` would
+otherwise bury the real exception; the helper disposes the engine in `finally`
+before cleanup and uses `ignore_cleanup_errors=True`, so a leftover file can
+never mask anything. **The demo commands fail fast with a hint when the
+generated data is missing:** `demo.evaluate`, `demo.load` and `evaluation.run`
+check the dataset up front and exit non-zero with
+`Generated … data not found … Run: python -m demo.generate` (naming the first
+missing file for a partial set), with no traceback — the generated files are
+gitignored output, so their absence is a step not yet run, not a bug.
+
+**Windows launcher.** `run_demo.ps1` mirrors `run_demo.sh` for PowerShell
+5.1 and 7: same seven steps (generate / load / evaluate / npm install if
+needed / API background / wait on `/api/meta` / `vite` in the foreground),
+same default ports (8765 / 5175), with switches `-ApiPort`, `-SkipGenerate`,
+`-SkipEvaluate`, `-Offline` (clears provider env keys in-process; `.env`
+untouched, since the loader never overrides a set variable), and
+`-CheckOnly`. The script must stay pure ASCII (5.1 reads BOM-less UTF-8 as
+ANSI) and 5.1-compatible (no `&&`/`||` chains, no ternary, no `??`, no
+`-Parallel`); tests pin this. API logs land in `data/demo/logs/`
+(gitignored). The `.sh` is **unchanged** and byte-asserted against git.
 
 **Demo set** (`backend/demo`): ten applications, nine injected issue types,
 three clean controls, two honest-but-flag-expected (revoked, expired). Labels

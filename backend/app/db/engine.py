@@ -16,8 +16,11 @@ history nobody trusts is worse than none.
 
 from __future__ import annotations
 
+import contextlib
+import logging
+import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from sqlalchemy import event, inspect, text
 from sqlalchemy.engine import Engine
@@ -25,6 +28,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from ..core.config import get, load_config
 from .models import Base, SchemaVersion
+
+_log = logging.getLogger(__name__)
 
 # v2: faculty_members, detector_details, risk_assessments, documents.claim,
 # and the faculty/photo config versions on check_runs.
@@ -207,4 +212,55 @@ class Database:
         return sorted(inspect(self.engine).get_table_names())
 
     def dispose(self) -> None:
+        # SQLAlchemy's dispose is idempotent, so this is safe to call more than
+        # once - which the temporary-database helper relies on.
         self.engine.dispose()
+
+
+@contextlib.contextmanager
+def temporary_sqlite_database(
+    config: dict[str, Any] | None = None,
+    name: str = "scratch.db",
+) -> Iterator["Database"]:
+    """A throwaway SQLite database in a temporary directory, disposed first.
+
+    On Windows a SQLite file cannot be deleted while its engine still holds it
+    open, so the directory cleanup raises ``NotADirectoryError`` and buries
+    whatever real exception was unwinding. Two guards close that off:
+
+    - the engine is disposed in a ``finally`` **before** the directory is
+      removed, so there is nothing open to block the delete; and
+    - the directory uses ``ignore_cleanup_errors=True``, so even a leftover
+      file can never replace the real exception - at worst it leaves a warning.
+
+    The yielded ``Database`` is an ordinary one; dispose is idempotent, so a
+    caller may dispose it too. Behaviour on macOS and Linux is unchanged: the
+    delete succeeds there whether or not the engine was disposed first.
+    """
+    cfg = config if config is not None else load_config("persistence")
+    # ignore_cleanup_errors is available on 3.10+.
+    tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+    database: "Database" | None = None
+    try:
+        url = f"sqlite:///{(Path(tmp.name) / name).as_posix()}"
+        database = Database(cfg, url=url)
+        yield database
+    finally:
+        if database is not None:
+            database.dispose()
+        # ignore_cleanup_errors already stops rmtree from raising, but the
+        # cleanup call is wrapped too: nothing in this finally may replace the
+        # exception that is unwinding. A leftover temp file is harmless.
+        try:
+            tmp.cleanup()
+        except Exception as cleanup_error:  # pragma: no cover - defensive
+            _log.warning(
+                "temporary database directory cleanup failed (%s): %s",
+                cleanup_error,
+                tmp.name,
+            )
+        else:
+            if Path(tmp.name).exists():
+                _log.warning(
+                    "temporary database directory not fully removed: %s", tmp.name
+                )
