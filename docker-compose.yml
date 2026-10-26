@@ -1,0 +1,72 @@
+# One command for the demo in Docker:
+#
+#   docker compose run --rm demo-setup       # generate + load + evaluate
+#   docker compose up                        # API + dashboard
+#
+# Dashboard on http://localhost:5175, API on http://localhost:8765/docs.
+#
+# Generated data (demo applications, store, logs, sqlite db) lives in named
+# volumes so it survives `docker compose down` but can be reset with
+# `docker compose down -v`. The data/demo tree committed in git (issuer
+# registry, mock AICTE records, website snapshots) is baked into the image.
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: authentiq-backend
+    ports:
+      - "8765:8765"
+    environment:
+      API_PORT: "8765"
+      # Set GROQ_API_KEY in a .env next to this file to use the live reader;
+      # without it the offline label reader stands in.
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      SIH_SESSION_SECRET: "${SIH_SESSION_SECRET:-}"
+    volumes:
+      # One volume for everything the backend writes: db, store, demo
+      # applications, logs, evaluation output. The image seeds committed
+      # files (issuer registry, mock AICTE records, website snapshots) on
+      # first start, so a fresh volume still works.
+      - app-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8765/api/meta"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: authentiq-frontend
+    ports:
+      - "5175:5175"
+    environment:
+      API_TARGET: "http://backend:8765"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # One-shot: generate the synthetic dataset, load it into a fresh database,
+  # measure it. Run with `docker compose run --rm demo-setup`.
+  demo-setup:
+    image: authentiq-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["setup"]
+    environment:
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
+    volumes:
+      - app-data:/app/data
+    command: >
+      sh -c "python -m demo.generate &&
+             python -m demo.load --fresh &&
+             python -m demo.evaluate &&
+             echo 'demo setup complete.'"
+
+volumes:
+  app-data:

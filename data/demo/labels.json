@@ -68,13 +68,13 @@
           "file": "applications/malabar/photos/electrical_lab.jpg",
           "document_type": "lab_photo",
           "claim": "Electrical Machines Lab",
-          "sha256": "c6d6e9b865154894c5c96bc86cdbb59fced64e287de018199fac9e93244562c9"
+          "sha256": "cac6ec7aeefae6d95a822de26f763c7a56c8a24a8ad8d940db34adbcfa199807"
         },
         {
           "file": "applications/malabar/photos/seminar_hall.jpg",
           "document_type": "classroom_photo",
           "claim": "Seminar Hall",
-          "sha256": "f81a09773c6165b3014eeebad1b279e8b800d1dc38bde1d340cf8ce26619ae09"
+          "sha256": "6ee054e7d90a40bc02d659d5512b4e01a20573c8a31819e8da829fa5d63190e6"
         }
       ]
     },
@@ -122,7 +122,7 @@
           "file": "applications/deccan/photos/it_lab.jpg",
           "document_type": "lab_photo",
           "claim": "IT Lab 2 - 24 systems",
-          "sha256": "c3d78d911e199347ecb247c3f8f6068b64e0b5ebfaaab244fd3c73c5cd6136d6"
+          "sha256": "e0666f63bde74798584ab058976e5c1b6a40cf72fd481b41a99e26698fc02529"
         },
         {
           "file": "applications/deccan/photos/smart_classroom.png",

@@ -68,6 +68,29 @@ not touched), `-CheckOnly` to run preflight and exit. If preflight fails it
 prints what to fix (venv missing, wrong Python, missing packages, port busy,
 Node too old).
 
+**Docker (any OS):**
+
+```bash
+# One-time: generate the synthetic dataset, load it, measure it.
+docker compose --profile setup run --rm demo-setup
+
+# Every day:
+docker compose up                           # http://localhost:5175
+
+# Stop (data volume kept):
+docker compose down
+
+# Full reset (drops the sqlite DB, store and generated apps):
+docker compose down -v
+```
+
+Pass `GROQ_API_KEY=<key>` in the shell (or a `.env` next to
+`docker-compose.yml`) to use the live reader; without it the offline reader
+stands in. The `backend` service exposes the API on `localhost:8765`
+(`/docs` for the OpenAPI UI), the `frontend` service exposes the dashboard
+on `localhost:5175`, and both share a single named volume (`app-data`) for
+the SQLite DB, content-addressed store, demo applications and logs.
+
 Open **http://localhost:5175**. The script generates the synthetic dataset, runs
 all eleven demo applications through the real pipeline into a fresh database,
 measures detection and false positives, and starts the API (`127.0.0.1:8765`)
